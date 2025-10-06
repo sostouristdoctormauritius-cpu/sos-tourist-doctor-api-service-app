@@ -256,16 +256,43 @@ npm run test:coverage
 
 ## Deployment
 
-For production deployment:
-1. Set `NODE_ENV=production` in your environment variables
-2. Ensure all environment variables are properly configured
-3. Run `npm start` to start the application
+The application can be deployed in multiple ways:
 
-Recommended deployment platforms:
-- Heroku
-- AWS Elastic Beanstalk
-- Google Cloud Run
-- Docker containers
+### Traditional Deployment
+Follow the [Production Setup Guide](PRODUCTION_SETUP.md) for detailed instructions.
+
+### Docker Deployment
+```bash
+# Build the Docker image
+npm run docker:build
+
+# Run the Docker container
+npm run docker:run
+```
+
+### PM2 Deployment
+```bash
+# Install PM2 globally
+npm install -g pm2
+
+# Start with PM2
+pm2 start scripts/deployment/ecosystem.config.js --env production
+```
+
+## Monitoring
+
+The application includes built-in monitoring capabilities:
+
+- Health check endpoints at `/v1/health`
+- Metrics collection at `/v1/health/metrics`
+- Structured logging with Winston
+- Performance monitoring for slow requests
+
+See [Monitoring Documentation](docs/MONITORING.md) for details.
+
+## Production Checklist
+
+Before deploying to production, review the [Production Checklist](docs/PRODUCTION_CHECKLIST.md) to ensure all requirements are met.
 
 ## Contributing
 

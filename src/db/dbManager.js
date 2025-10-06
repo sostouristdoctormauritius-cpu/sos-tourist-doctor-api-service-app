@@ -1,5 +1,6 @@
 const supabaseAdapter = require('./adapters/supabaseAdapter');
 const logger = require('../config/logger');
+const metricsService = require('../services/metrics.service');
 
 /**
  * Database Manager - Handles database operations using Supabase
@@ -34,12 +35,16 @@ class DbManager {
 
   // Expose common database operations
   async create(table, data) {
+    const startTime = Date.now();
+    let errorOccurred = false;
+    
     try {
       this._checkClient();
       logger.info(`Attempting to create record in ${table}`, { data });
       const { data: result, error } = await this.supabaseAdapter.create(table, data);
       if (error) {
         logger.error(`Error creating record in ${table}:`, { error, data });
+        errorOccurred = true;
         throw error;
       }
       logger.info(`Successfully created record in ${table}`, { result });
@@ -52,31 +57,54 @@ class DbManager {
         details: error.details,
         hint: error.hint
       });
+      errorOccurred = true;
       throw error;
+    } finally {
+      const duration = Date.now() - startTime;
+      metricsService.trackDatabaseQuery(duration, errorOccurred);
     }
   }
 
   async findById(table, id, populate = []) {
+    const startTime = Date.now();
+    let errorOccurred = false;
+    
     try {
       this._checkClient();
-      return await this.supabaseAdapter.findById(table, id, populate);
+      const result = await this.supabaseAdapter.findById(table, id, populate);
+      return result;
     } catch (error) {
       logger.error(`Error finding record by ID ${id} in ${table}:`, error);
+      errorOccurred = true;
       throw error;
+    } finally {
+      const duration = Date.now() - startTime;
+      metricsService.trackDatabaseQuery(duration, errorOccurred);
     }
   }
 
   async findMany(table, query, populate = []) {
+    const startTime = Date.now();
+    let errorOccurred = false;
+    
     try {
       this._checkClient();
-      return await this.supabaseAdapter.findMany(table, query, populate);
+      const result = await this.supabaseAdapter.findMany(table, query, populate);
+      return result;
     } catch (error) {
       logger.error(`Error finding records in ${table}:`, error);
+      errorOccurred = true;
       throw error;
+    } finally {
+      const duration = Date.now() - startTime;
+      metricsService.trackDatabaseQuery(duration, errorOccurred);
     }
   }
 
   async findOne(table, query, populate = []) {
+    const startTime = Date.now();
+    let errorOccurred = false;
+    
     try {
       this._checkClient();
       logger.info('dbManager.findOne called with:', { table, query, populate });
@@ -90,149 +118,52 @@ class DbManager {
         code: error.code,
         stack: error.stack
       });
+      errorOccurred = true;
       throw error;
+    } finally {
+      const duration = Date.now() - startTime;
+      metricsService.trackDatabaseQuery(duration, errorOccurred);
     }
   }
 
   async update(table, id, data) {
+    const startTime = Date.now();
+    let errorOccurred = false;
+    
     try {
       this._checkClient();
-      return await this.supabaseAdapter.update(table, id, data);
+      const result = await this.supabaseAdapter.update(table, id, data);
+      return result;
     } catch (error) {
-      logger.error(`Error updating record ${id} in ${table}:`, error);
+      logger.error(`Error updating record in ${table} with ID ${id}:`, error);
+      errorOccurred = true;
       throw error;
+    } finally {
+      const duration = Date.now() - startTime;
+      metricsService.trackDatabaseQuery(duration, errorOccurred);
     }
   }
 
   async delete(table, id) {
+    const startTime = Date.now();
+    let errorOccurred = false;
+    
     try {
       this._checkClient();
-      return await this.supabaseAdapter.delete(table, id);
+      const result = await this.supabaseAdapter.delete(table, id);
+      return result;
     } catch (error) {
-      logger.error(`Error deleting record ${id} in ${table}:`, error);
+      logger.error(`Error deleting record in ${table} with ID ${id}:`, error);
+      errorOccurred = true;
       throw error;
+    } finally {
+      const duration = Date.now() - startTime;
+      metricsService.trackDatabaseQuery(duration, errorOccurred);
     }
   }
 
-  async aggregate(table, pipeline) {
-    try {
-      this._checkClient();
-      return await this.supabaseAdapter.aggregate(table, pipeline);
-    } catch (error) {
-      logger.error(`Error aggregating records in ${table}:`, error);
-      throw error;
-    }
-  }
-
-  async count(table, query = {}) {
-    try {
-      this._checkClient();
-      // Use the Supabase adapter's count functionality for better performance
-      const result = await this.supabaseAdapter.count(table, query);
-      return result || 0;
-    } catch (error) {
-      logger.error(`Error counting records in ${table}:`, error);
-      throw error;
-    }
-  }
-
-  async isEmailTaken(email, excludeUserId) {
-    try {
-      this._checkClient();
-      const query = { email };
-      if (excludeUserId) {
-        query.id = { neq: excludeUserId };
-      }
-      const user = await this.supabaseAdapter.findOne('users', query);
-      return !!user;
-    } catch (error) {
-      logger.error(`Error checking if email ${email} is taken:`, error);
-      throw error;
-    }
-  }
-
-  async isPhoneTaken(phone) {
-    try {
-      this._checkClient();
-      const user = await this.supabaseAdapter.findOne('users', { phone });
-      return !!user;
-    } catch (error) {
-      logger.error(`Error checking if phone ${phone} is taken:`, error);
-      throw error;
-    }
-  }
-
-  async checkConflictingAppointment(doctorId, date, startTime, endTime) {
-    try {
-      this._checkClient();
-      const conflicting = await this.supabaseAdapter.checkConflictingAppointment(doctorId, date, startTime, endTime);
-      return conflicting;
-    } catch (error) {
-      logger.error('Error checking conflicting appointment:', error);
-      throw error;
-    }
-  }
-
-  async findAvailableDoctor(date, startTime, consultationType) {
-    try {
-      this._checkClient();
-      const availableDoctor = await this.supabaseAdapter.findAvailableDoctor(date, startTime, consultationType);
-      return availableDoctor;
-    } catch (error) {
-      logger.error('Error finding available doctor:', error);
-      throw error;
-    }
-  }
-
-  async paginate(table, query, options) {
-    try {
-      this._checkClient();
-      return await this.supabaseAdapter.paginate(table, query, options);
-    } catch (error) {
-      logger.error(`Error paginating records in ${table}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Subscribe to real-time changes in a table
-   * @param {string} table - The table name to subscribe to
-   * @param {function} callback - The callback function to handle changes
-   * @param {string} subscriptionName - Optional name for the subscription
-   * @returns {object} The subscription channel
-   */
-  subscribeToTable(table, callback, subscriptionName) {
-    try {
-      this._checkClient();
-      return this.supabaseAdapter.subscribeToTable(table, callback, subscriptionName);
-    } catch (error) {
-      logger.error(`Error subscribing to table ${table}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Subscribe to real-time changes in a table with a filter
-   * @param {string} table - The table name to subscribe to
-   * @param {string} filter - The filter to apply to the subscription
-   * @param {function} callback - The callback function to handle changes
-   * @param {string} subscriptionName - Optional name for the subscription
-   * @returns {object} The subscription channel
-   */
-  subscribeToTableWithFilter(table, filter, callback, subscriptionName) {
-    try {
-      this._checkClient();
-      return this.supabaseAdapter.subscribeToTableWithFilter(table, filter, callback, subscriptionName);
-    } catch (error) {
-      logger.error(`Error subscribing to table ${table} with filter ${filter}:`, error);
-      throw error;
-    }
-  }
-
-  // Method to get the Supabase client directly for special operations
   getDbClient() {
-    this._checkClient();
-    return this.supabaseAdapter.supabase;
+    return this.supabaseAdapter;
   }
 }
 

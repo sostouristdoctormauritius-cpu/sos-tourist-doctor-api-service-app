@@ -497,20 +497,38 @@ const completeDeletion = async (token) => {
 };
 
 const deleteOtpsByUserId = async (userId) => {
-  // Implementation would go here
-  logger.info('deleteOtpsByUserId called with userId:', userId);
-  // For now, we'll just return a resolved promise
-  return Promise.resolve();
+  try {
+    logger.info('deleteOtpsByUserId called with userId:', userId);
+    // Delete existing OTPs for this user
+    await dbManager.deleteMany('otps', { userId });
+    return Promise.resolve();
+  } catch (error) {
+    logger.error('Error deleting OTPs for user:', error);
+    throw error;
+  }
 };
 
 const createOtp = async (userId, otpCode, expiresAt) => {
-  logger.info('createOtp called with:', { userId, otpCode, expiresAt });
-  // For now, we'll just return a mock OTP object
-  return Promise.resolve({
-    userId,
-    otp: otpCode,
-    expiresAt
-  });
+  try {
+    logger.info('createOtp called with:', { userId, otpCode, expiresAt });
+
+    // Delete any existing OTPs for this user first
+    await deleteOtpsByUserId(userId);
+
+    // Create new OTP record
+    const otpData = {
+      userId,
+      otp: otpCode,
+      expiresAt,
+      createdAt: new Date()
+    };
+
+    const otpRecord = await dbManager.create('otps', otpData);
+    return otpRecord;
+  } catch (error) {
+    logger.error('Error creating OTP:', error);
+    throw error;
+  }
 };
 
 const getUserCount = async () => {

@@ -1,13 +1,23 @@
 // Jest setup file for SOS Tourist Doctor API tests
 
-// Set test environment variables
+// Load test environment variables
+require('dotenv').config({ path: '.env.test' });
+
+// Set test environment
 process.env.NODE_ENV = 'test';
 
-// Mock environment variables if needed
-process.env.JWT_SECRET = 'test-jwt-secret-key-that-is-at-least-32-characters-long';
-process.env.SUPABASE_URL = 'https://test.supabase.co';
-process.env.SUPABASE_ANON_KEY = 'test-anon-key';
-process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/testdb';
+// Setup test database
+const setupTestDB = () => {
+  // Mock database operations for testing
+  jest.mock('../src/db/dbManager', () => ({
+    create: jest.fn(),
+    findOne: jest.fn(),
+    find: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+    query: jest.fn()
+  }));
+};
 
 // Global test setup
 beforeAll(async () => {
@@ -47,3 +57,5 @@ global.console = {
   // Uncomment to ignore console.warn in tests
   // warn: jest.fn(),
 };
+
+module.exports = { setupTestDB };

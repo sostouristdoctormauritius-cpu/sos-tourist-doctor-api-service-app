@@ -20,9 +20,17 @@ const ApiError = require('./utils/ApiError');
 const realtimeService = require('./services/realtime.service');
 const { supabaseAuth } = require('./middlewares/supabaseAuth');
 const auth = require('./middlewares/auth');
-const dashboardController = require('./controllers/dashboard.controller');  // 新增 dashboard controller 引入
+const dashboardController = require('./controllers/dashboard.controller');
+const metricsMiddleware = require('./middlewares/metrics.middleware'); // Add metrics middleware
+const performanceMiddleware = require('./middlewares/performance.middleware'); // Add performance middleware
 
 const app = express();
+
+// Add metrics middleware early in the chain
+app.use(metricsMiddleware);
+
+// Add performance monitoring middleware
+app.use(performanceMiddleware);
 
 // Logging
 if (config.env !== 'test') {

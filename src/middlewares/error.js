@@ -1,27 +1,36 @@
-const { status } = require('http-status');
+const httpStatus = require('http-status');
 const config = require('../config/config');
 const logger = require('../config/logger');
-const ApiError = require('../utils/ApiError');
+const { 
+  ApiError,
+  ValidationError,
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  DatabaseError,
+  ExternalServiceError
+} = require('../utils/errors');
 
 const errorConverter = (err, req, res, next) => {
   let error = err;
-  logger.info('Error converter called with:', {
-    errName: err.name,
-    errMessage: err.message,
-    errStack: err.stack,
-    errStatusCode: err.statusCode,
-    isApiError: err instanceof ApiError
+  
+  // Log the original error for debugging
+  logger.error('Error occurred:', {
+    name: err.name,
+    message: err.message,
+    stack: err.stack,
+    url: req.originalUrl,
+    method: req.method,
+    ip: req.ip
   });
 
-  console.log('Error object:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
-
   if (!(error instanceof ApiError)) {
-    const statusCode = error.statusCode || status.INTERNAL_SERVER_ERROR;
-    console.log('Calculated status code:', statusCode);
-    const message = error.message || status[statusCode] || 'Bad Request';
-    console.log('Message:', message);
+    // Convert standard errors to ApiError
+    const statusCode = error.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
+    const message = error.message || httpStatus[statusCode];
     error = new ApiError(statusCode, message, false, err.stack);
   }
+  
   next(error);
 };
 

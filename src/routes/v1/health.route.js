@@ -3,10 +3,11 @@ const config = require('../../config/config');
 const logger = require('../../config/logger');
 const socketService = require('../../services/socket.service');
 const dbHealthCheckService = require('../../services/dbHealthCheck.service');
+const metricsService = require('../../services/metrics.service');
 
 const router = express.Router();
 const catchAsync = require('../../utils/catchAsync');
-const ApiError = require('../../utils/ApiError');
+const { NotFoundError } = require('../../utils/errors');
 const httpStatus = require('http-status');
 
 // Health check endpoint for load balancers and monitoring
@@ -22,6 +23,7 @@ router.get('/', catchAsync(async (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: config.env,
+    version: config.version || '1.0.0',
     services: {
       database: dbHealth.status === 'healthy' ? 'connected' : 'issues',
       realtime: socketService.io ? 'operational' : 'not initialized'
@@ -49,6 +51,9 @@ router.get('/details', catchAsync(async (req, res) => {
 
   // Get memory usage
   const memoryUsage = process.memoryUsage();
+  
+  // Get metrics
+  const metrics = metricsService.getMetrics();
 
   res.status(200).json({
     status: 'ok',
@@ -65,6 +70,13 @@ router.get('/details', catchAsync(async (req, res) => {
     realtime: {
       status: socketService.io ? 'operational' : 'not initialized',
       connectedUsers: socketService.io ? socketService.getConnectedUserCount() : 0
+    },
+    metrics: {
+      apiRequests: metrics.apiRequests,
+      database: metrics.database,
+      users: metrics.users,
+      errors: metrics.errors
+    }
     }
   });
 }));

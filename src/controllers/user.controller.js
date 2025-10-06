@@ -375,13 +375,62 @@ const resendOtp = async (req, res) => {
 };
 
 const verifyEmailApp = catchAsync(async (req, res) => {
-  // Implementation would go here
-  res.status(httpStatus.NOT_IMPLEMENTED).send({ message: 'Not implemented' });
+  const { email, verificationToken } = req.body;
+
+  if (!email || !verificationToken) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Email and verification token are required');
+  }
+
+  // Find user by email and verify token
+  const user = await userService.verifyUserEmail(email, verificationToken);
+
+  if (!user) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid verification token or user not found');
+  }
+
+  // Generate auth tokens
+  const tokens = await tokenService.generateAuthTokens(user);
+
+  res.status(httpStatus.OK).send({
+    message: 'Email verified successfully',
+    user,
+    tokens
+  });
 });
 
 const verifyOtpApp = catchAsync(async (req, res) => {
-  // Implementation would go here
-  res.status(httpStatus.NOT_IMPLEMENTED).send({ message: 'Not implemented' });
+  const { otp, email } = req.body;
+
+  if (!otp || !email) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'OTP and email are required');
+  }
+
+  // Find user by email
+  const user = await userService.getUserByEmail(email);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  // Verify OTP using the OTP service
+  const isOtpValid = await otpService.verifyOtp(user._id, otp);
+
+  if (!isOtpValid) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid OTP');
+  }
+
+  // Update user status to active
+  const updatedUser = await userService.updateUserById(user._id, {
+    isStatus: 'active'
+  });
+
+  // Generate auth tokens
+  const tokens = await tokenService.generateAuthTokens(updatedUser);
+
+  res.status(httpStatus.OK).send({
+    message: 'OTP verified successfully',
+    user: updatedUser,
+    tokens
+  });
 });
 
 module.exports = {

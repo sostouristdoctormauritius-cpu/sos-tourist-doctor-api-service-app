@@ -1,1 +1,836 @@
-# This is a placeholder file to satisfy the swagger-jsdoc configuration.
+# Swagger API Documentation for SOS Tourist Doctor API
+
+openapi: 3.0.3
+info:
+  title: SOS Tourist Doctor API
+  description: |
+    A comprehensive telemedicine API for tourists and doctors providing emergency medical assistance,
+    appointment scheduling, real-time communication, and medical record management.
+
+    ## Features
+    - **Multi-role Authentication**: Support for patients, doctors, and administrators
+    - **Emergency SOS**: Immediate medical assistance for tourists
+    - **Real-time Communication**: Chat and video calls between patients and doctors
+    - **Appointment Management**: Scheduling and availability management
+    - **Medical Records**: Prescriptions, doctor notes, and medical history
+    - **Multi-language Support**: International accessibility
+
+    ## Authentication
+    All API endpoints (except public ones) require JWT authentication.
+    Include the token in the Authorization header: `Bearer <your-jwt-token>`
+
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@sostouristdoctor.com
+
+servers:
+  - url: http://localhost:3000/v1
+    description: Development server
+  - url: https://api.sostouristdoctor.com/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        phone:
+          type: string
+          example: "+1234567890"
+        role:
+          type: string
+          enum: [user, doctor, admin]
+          example: "user"
+        isEmailVerified:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Doctor:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            doctorProfile:
+              type: object
+              properties:
+                specialisation:
+                  type: string
+                  example: "Cardiology"
+                experience:
+                  type: number
+                  example: 10
+                rating:
+                  type: number
+                  example: 4.5
+                isListed:
+                  type: boolean
+                  example: true
+                supportedLanguages:
+                  type: array
+                  items:
+                    type: string
+                  example: ["English", "French", "Spanish"]
+
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: string
+        patientId:
+          type: string
+        doctorId:
+          type: string
+        appointmentDate:
+          type: string
+          format: date-time
+        duration:
+          type: number
+          example: 30
+        status:
+          type: string
+          enum: [scheduled, confirmed, completed, cancelled]
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: number
+          example: 400
+        message:
+          type: string
+          example: "Bad Request"
+        details:
+          type: object
+
+security:
+  - bearerAuth: []
+
+paths:
+  # Authentication endpoints
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account (patient, doctor, or admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - role
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+                password:
+                  type: string
+                  minLength: 8
+                  example: "SecurePass123!"
+                phone:
+                  type: string
+                  example: "+1234567890"
+                role:
+                  type: string
+                  enum: [user, doctor, admin]
+                  example: "user"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  tokens:
+                    type: object
+                    properties:
+                      access:
+                        type: object
+                        properties:
+                          token:
+                            type: string
+                          expires:
+                            type: string
+                            format: date-time
+                      refresh:
+                        type: object
+                        properties:
+                          token:
+                            type: string
+                          expires:
+                            type: string
+                            format: date-time
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticate user with email/phone and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: "john.doe@example.com"
+                  description: "Email or phone number"
+                password:
+                  type: string
+                  example: "SecurePass123!"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  tokens:
+                    type: object
+                    properties:
+                      access:
+                        type: object
+                        properties:
+                          token:
+                            type: string
+                          expires:
+                            type: string
+                            format: date-time
+                      refresh:
+                        type: object
+                        properties:
+                          token:
+                            type: string
+                          expires:
+                            type: string
+                            format: date-time
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Invalidate user tokens
+      security: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logout successful"
+
+  /auth/refresh-tokens:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Get new access token using refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      expires:
+                        type: string
+                        format: date-time
+
+  # Doctor endpoints
+  /doctors:
+    get:
+      tags:
+        - Doctors
+      summary: Get all doctors
+      description: Retrieve list of available doctors with optional filtering
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - in: query
+          name: specialisation
+          schema:
+            type: string
+        - in: query
+          name: language
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of doctors retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Doctor'
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  totalResults:
+                    type: integer
+
+    post:
+      tags:
+        - Doctors
+      summary: Create a new doctor
+      description: Create a new doctor account (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  example: "Dr. Sarah Johnson"
+                email:
+                  type: string
+                  format: email
+                  example: "dr.johnson@hospital.com"
+                password:
+                  type: string
+                  minLength: 8
+                  example: "DoctorPass123!"
+                phone:
+                  type: string
+                  example: "+1234567890"
+                doctorProfile:
+                  type: object
+                  properties:
+                    specialisation:
+                      type: string
+                      example: "Emergency Medicine"
+                    experience:
+                      type: number
+                      example: 15
+                    supportedLanguages:
+                      type: array
+                      items:
+                        type: string
+                      example: ["English", "French", "Spanish"]
+      responses:
+        '201':
+          description: Doctor created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /doctors/{doctorId}:
+    get:
+      tags:
+        - Doctors
+      summary: Get doctor by ID
+      description: Retrieve detailed information about a specific doctor
+      parameters:
+        - in: path
+          name: doctorId
+          required: true
+          schema:
+            type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Doctor retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+        '404':
+          description: Doctor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      tags:
+        - Doctors
+      summary: Update doctor
+      description: Update doctor information (admin only)
+      parameters:
+        - in: path
+          name: doctorId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                phone:
+                  type: string
+                doctorProfile:
+                  type: object
+      responses:
+        '200':
+          description: Doctor updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+
+    delete:
+      tags:
+        - Doctors
+      summary: Delete doctor
+      description: Remove a doctor from the system (admin only)
+      parameters:
+        - in: path
+          name: doctorId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Doctor deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Doctor deleted successfully"
+
+  # Appointment endpoints
+  /appointments:
+    get:
+      tags:
+        - Appointments
+      summary: Get user appointments
+      description: Retrieve appointments for the authenticated user
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [scheduled, confirmed, completed, cancelled]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Appointments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Appointment'
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  totalResults:
+                    type: integer
+
+    post:
+      tags:
+        - Appointments
+      summary: Create new appointment
+      description: Book a new appointment with a doctor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - doctorId
+                - appointmentDate
+                - duration
+              properties:
+                doctorId:
+                  type: string
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                appointmentDate:
+                  type: string
+                  format: date-time
+                  example: "2024-01-15T10:00:00Z"
+                duration:
+                  type: number
+                  example: 30
+                  description: "Duration in minutes"
+                notes:
+                  type: string
+                  example: "Follow-up consultation"
+      responses:
+        '201':
+          description: Appointment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+        '400':
+          description: Invalid appointment data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /appointments/{appointmentId}:
+    get:
+      tags:
+        - Appointments
+      summary: Get appointment details
+      description: Retrieve detailed information about a specific appointment
+      parameters:
+        - in: path
+          name: appointmentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Appointment retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+        '404':
+          description: Appointment not found
+
+    patch:
+      tags:
+        - Appointments
+      summary: Update appointment
+      description: Modify appointment details
+      parameters:
+        - in: path
+          name: appointmentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                appointmentDate:
+                  type: string
+                  format: date-time
+                duration:
+                  type: number
+                status:
+                  type: string
+                  enum: [scheduled, confirmed, completed, cancelled]
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Appointment updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+
+    delete:
+      tags:
+        - Appointments
+      summary: Cancel appointment
+      description: Cancel an existing appointment
+      parameters:
+        - in: path
+          name: appointmentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Appointment cancelled successfully
+
+  # SOS endpoints
+  /sos/alert:
+    post:
+      tags:
+        - SOS Emergency
+      summary: Send SOS alert
+      description: Send emergency alert to available doctors
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - patientName
+                - location
+                - emergencyType
+              properties:
+                patientName:
+                  type: string
+                  example: "John Doe"
+                phone:
+                  type: string
+                  example: "+1234567890"
+                location:
+                  type: string
+                  example: "Hotel ABC, Room 123, Main Street"
+                emergencyType:
+                  type: string
+                  enum: [medical, accident, allergic, cardiac, respiratory, other]
+                  example: "medical"
+                description:
+                  type: string
+                  example: "Severe chest pain, difficulty breathing"
+                language:
+                  type: string
+                  example: "English"
+      responses:
+        '201':
+          description: SOS alert sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "SOS alert sent successfully"
+                  sosId:
+                    type: string
+                    example: "sos_123e4567-e89b-12d3-a456-426614174000"
+        '400':
+          description: Invalid SOS data
+
+  /sos/{sosId}/respond:
+    post:
+      tags:
+        - SOS Emergency
+      summary: Respond to SOS alert
+      description: Allow doctors to respond to emergency alerts
+      parameters:
+        - in: path
+          name: sosId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - doctorId
+                - estimatedArrival
+              properties:
+                doctorId:
+                  type: string
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                estimatedArrival:
+                  type: number
+                  example: 15
+                  description: "Estimated arrival time in minutes"
+                notes:
+                  type: string
+                  example: "Bringing emergency kit"
+      responses:
+        '200':
+          description: Response recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Response recorded successfully"
+
+  # Health check endpoints (public)
+  /health:
+    get:
+      tags:
+        - System
+      summary: Basic health check
+      description: Check if the API is running
+      security: []
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  uptime:
+                    type: number
+                    example: 3600
+
+  /health/details:
+    get:
+      tags:
+        - System
+      summary: Detailed health check
+      description: Comprehensive system health information
+      security: []
+      responses:
+        '200':
+          description: Detailed health information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  database:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: "connected"
+                      responseTime:
+                        type: number
+                        example: 50
+                  memory:
+                    type: object
+                    properties:
+                      used:
+                        type: number
+                        example: 134217728
+                      total:
+                        type: number
+                        example: 268435456
+                  uptime:
+                    type: number
+                    example: 3600

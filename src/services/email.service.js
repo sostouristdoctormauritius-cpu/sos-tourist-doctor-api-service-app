@@ -5,12 +5,12 @@ const smtpTransport = require('nodemailer-smtp-transport');
 
 const transport = nodemailer.createTransport(
   smtpTransport({
-    host: config.email.smtp.host,
-    port: config.email.smtp.port,
-    secure: config.email.smtp.port === 465, // true for 465, false for other ports
+    host: config.email.host,
+    port: config.email.port,
+    secure: config.email.port === 465, // true for 465, false for other ports
     auth: {
-      user: config.email.smtp.auth.user,
-      pass: config.email.smtp.auth.pass
+      user: config.email.username,
+      pass: config.email.password
     }
   })
 );

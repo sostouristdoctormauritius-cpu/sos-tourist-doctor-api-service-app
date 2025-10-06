@@ -4,7 +4,7 @@ console.log('httpStatus:', httpStatus);
 
 const catchAsync = require('../utils/catchAsync');
 const pick = require('../utils/pick');
-const { appointmentService } = require('../services');
+const { appointmentService, paymentService } = require('../services');
 const { createSimpleAppointment } = require('../services/appointment.service');
 const { successResponse, paginatedResponse } = require('../utils/apiResponse');
 const ApiError = require('../utils/ApiError');
@@ -189,6 +189,43 @@ const getCurrentMonthAppointments = catchAsync(async (req, res) => {
   res.status(httpStatus.OK).json(successResponse(response, 'Current month appointments retrieved successfully'));
 });
 
+const getAvailableSlots = catchAsync(async (req, res) => {
+  const { doctorId, date } = req.query;
+
+  if (!doctorId || !date) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Doctor ID and date are required');
+  }
+
+  const availableSlots = await appointmentService.getAvailableSlots(doctorId, date);
+
+  res.status(httpStatus.OK).json(
+    successResponse(availableSlots, 'Available slots retrieved successfully')
+  );
+});
+
+const processPayment = catchAsync(async (req, res) => {
+  const { appointmentId } = req.params;
+  const { paymentMethod, amount, currency = 'USD' } = req.body;
+
+  // Validate required fields
+  if (!paymentMethod || !amount) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Payment method and amount are required');
+  }
+
+  // Process payment through payment service
+  const paymentResult = await paymentService.processAppointmentPayment({
+    appointmentId,
+    userId: req.user._id,
+    paymentMethod,
+    amount,
+    currency
+  });
+
+  res.status(httpStatus.OK).json(
+    successResponse(paymentResult, 'Payment processed successfully')
+  );
+});
+
 module.exports = {
   checkAvailability,
   getAppointments,
@@ -203,5 +240,7 @@ module.exports = {
   changeAppointmentDoctor,
   getAllAppointments,
   getPublicAppointments,
-  getCurrentMonthAppointments
+  getCurrentMonthAppointments,
+  getAvailableSlots,
+  processPayment
 };

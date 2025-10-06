@@ -11,12 +11,13 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
-if (accountSid && authToken && twilioPhoneNumber) {
+if (accountSid && authToken && twilioPhoneNumber && accountSid.startsWith('AC')) {
   client = new twilio(accountSid, authToken);
   isConfigured = true;
 } else {
-  logger.warn('Twilio not configured: Missing TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER');
+  logger.warn('Twilio not configured: Missing or invalid TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER');
   if (!accountSid) logger.warn('Missing TWILIO_ACCOUNT_SID');
+  if (accountSid && !accountSid.startsWith('AC')) logger.warn('Invalid TWILIO_ACCOUNT_SID format');
   if (!authToken) logger.warn('Missing TWILIO_AUTH_TOKEN');
   if (!twilioPhoneNumber) logger.warn('Missing TWILIO_PHONE_NUMBER');
 }

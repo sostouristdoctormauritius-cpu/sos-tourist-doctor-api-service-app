@@ -1,0 +1,11 @@
+module.exports.authController = require('./auth.controller');
+module.exports.userController = require('./user.controller');
+module.exports.appConfigController = require('./appConfig.controller');
+module.exports.availabilityController = require('./availability.controller');
+module.exports.appointmentController = require('./appointment.controller');
+module.exports.invoiceController = require('./invoice.controller');
+module.exports.doctorNoteController = require('./doctorNote.controller');
+module.exports.prescriptionController = require('./prescription.controller');
+module.exports.webhookController = require('./webhook.controller');
+module.exports.dashboardController = require('./dashboard.controller');
+module.exports.otpAuthController = require('./otpAuth.controller');

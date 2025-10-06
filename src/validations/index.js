@@ -1,0 +1,13 @@
+module.exports.authValidation = require('./auth.validation');
+module.exports.userValidation = require('./user.validation');
+module.exports.doctorNoteValidation = require('./doctorNote.validation');
+module.exports.prescriptionValidation = require('./prescription.validation');
+module.exports.appConfigValidation = require('./appConfig.validation');
+module.exports.appointmentValidation = require('./appointment.validation');
+module.exports.availabilityValidation = require('./availability.validation');
+module.exports.dashboardValidation = require('./dashboard.validation');
+module.exports.invoiceValidation = require('./invoice.validation');
+module.exports.otpAuthValidation = require('./otpAuth.validation');
+module.exports.realtimeValidation = require('./realtime.validation');
+module.exports.customValidation = require('./custom.validation');
+module.exports.doctorValidation = require('./doctor.validation');

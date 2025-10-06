@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Dashboard</title>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    #test-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    #test-list li {
+      margin-bottom: 10px;
+    }
+    #test-output {
+      background-color: #f0f0f0;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Test Dashboard</h1>
+  <ul id="test-list"></ul>
+  <pre id="test-output"></pre>
+
+  <script>
+    const testList = document.getElementById('test-list');
+    const testOutput = document.getElementById('test-output');
+
+    fetch('/v1/test')
+      .then(response => response.json())
+      .then(files => {
+        files.forEach(file => {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.href = `/v1/test/run/${file}`;
+          a.textContent = file;
+          li.appendChild(a);
+          testList.appendChild(li);
+
+          a.addEventListener('click', (event) => {
+            event.preventDefault();
+            const url = a.getAttribute('href');
+            testOutput.textContent = 'Running test...';
+            fetch(url)
+              .then(response => response.text())
+              .then(output => {
+                testOutput.textContent = output;
+              });
+          });
+        });
+      });
+  </script>
+</body>
+</html>

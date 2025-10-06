@@ -1,0 +1,21 @@
+{
+  "files": {
+    "main.css": "/sos/static/css/main.5b0e4f0a.css",
+    "main.js": "/sos/static/js/main.2f29b66b.js",
+    "static/js/878.ce4bd4b6.chunk.js": "/sos/static/js/878.ce4bd4b6.chunk.js",
+    "static/js/704.54544485.chunk.js": "/sos/static/js/704.54544485.chunk.js",
+    "static/js/208.61f59363.chunk.js": "/sos/static/js/208.61f59363.chunk.js",
+    "static/media/jsoneditor-icons.svg": "/sos/static/media/jsoneditor-icons.15f2789dd231f36d43a4.svg",
+    "static/media/logo.svg": "/sos/static/media/logo.d41a31b77e3efa6441fd2fd8901c39c6.svg",
+    "index.html": "/sos/index.html",
+    "main.5b0e4f0a.css.map": "/sos/static/css/main.5b0e4f0a.css.map",
+    "main.2f29b66b.js.map": "/sos/static/js/main.2f29b66b.js.map",
+    "878.ce4bd4b6.chunk.js.map": "/sos/static/js/878.ce4bd4b6.chunk.js.map",
+    "704.54544485.chunk.js.map": "/sos/static/js/704.54544485.chunk.js.map",
+    "208.61f59363.chunk.js.map": "/sos/static/js/208.61f59363.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5b0e4f0a.css",
+    "static/js/main.2f29b66b.js"
+  ]
+}

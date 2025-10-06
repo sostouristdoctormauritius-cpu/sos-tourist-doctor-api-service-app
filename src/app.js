@@ -80,11 +80,25 @@ app.get('/', (req, res) => {
 // Cookie parser with secret
 app.use(cookieParser(config.jwt.secret));
 
-// Serve static files from the public directory with /sos prefix
-app.use('/sos', express.static(path.join(__dirname, '../public')));
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, '../public')));
 
-// Serve static files from src/public directory (needed for sos assets)
-// app.use(express.static(path.join(__dirname, './public'))); // This path is incorrect and has been disabled.
+// Explicitly serve specific static files
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+app.get('/vendor/supabase.js', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/vendor/supabase.js'));
+});
+
+app.get('/favicon.ico', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/favicon.ico'));
+});
+
+app.get('/logo.svg', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/logo.svg'));
+});
 
 // Initialize Passport (without sessions)
 app.use(passport.initialize());
@@ -172,6 +186,23 @@ app.get('/v1/auth-utils.js', (req, res) => {
 });
 */
 
+// Test route to check if static files are accessible
+app.get('/test-static', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  
+  // Check if login.html exists
+  const loginPath = path.join(__dirname, '../public/login.html');
+  const exists = fs.existsSync(loginPath);
+  
+  res.json({
+    loginFileExists: exists,
+    loginPath: loginPath,
+    cwd: process.cwd(),
+    __dirname: __dirname
+  });
+});
+
 // Correctly serve the React app assets.
 // Requests starting with /sos (e.g., /sos/static/js/main.js)
 // are mapped to the /public directory.
@@ -183,16 +214,6 @@ app.get('/sos/*', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
-// Serve logout.js file
-app.get('/v1/logout.js', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'logout.js'));  // 使用更简洁的路径结构
-});
-
-// Serve doctor management script
-app.use('/v1/doctorManagement.js', express.static(path.join(__dirname, 'public', 'doctorManagement.js')));
-
-// Serve admin navigation script
-app.use('/v1/adminNavigation.js', express.static(path.join(__dirname, 'public', 'adminNavigation.js')));
 
 // Inject logout script into dashboard
 app.get('/v1/dashboard', auth(), (req, res, next) => {
@@ -217,29 +238,6 @@ app.use('/services.js', express.static(path.join(__dirname, '../public', 'servic
 
 // Serve master-services.js file
 app.use('/master-services.js', express.static(path.join(__dirname, '../public', 'master-services.js')));
-
-// Serve vendor/supabase.js file
-app.use('/vendor/supabase.js', express.static(path.join(__dirname, '../public', 'vendor', 'supabase.js')));
-
-// Serve login.html file
-app.get('/login.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public', 'login.html'));
-});
-
-// Fix: Serve dashboard.html from the correct location (root public directory)
-app.get('/dashboard.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public', 'dashboard.html'));
-});
-
-// Fix: Serve settings.html from the correct location (root public directory)
-app.get('/settings.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public', 'settings.html'));
-});
-
-// Fix: Serve favicon.ico from the correct location (root public directory)
-app.use('/favicon.ico', express.static(path.join(__dirname, '../public', 'favicon.ico')));
-// Fix: Serve logo.svg from the correct location (root public directory)
-app.use('/logo.svg', express.static(path.join(__dirname, '../public', 'logo.svg')));
 
 // v1 routes
 app.use('/v1', routes);

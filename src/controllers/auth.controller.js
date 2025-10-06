@@ -2,12 +2,10 @@ const { status } = require('http-status');
 const catchAsync = require('../utils/catchAsync');
 const { authService, userService, tokenService, emailService } = require('../services');
 const ApiError = require('../utils/ApiError');
-const dbManager = require('../db/dbManager');
 const config = require('../config/config');
 const logger = require('../config/logger');
 const { isValidEmail } = require('../utils/validation');
 const { tokenTypes } = require('../config/tokens');
-const moment = require('../config/timezone');
 const { createClient } = require('@supabase/supabase-js');
 
 // Get Supabase client for Auth operations when needed

@@ -27,11 +27,11 @@ describe('User Service', () => {
 
     it('should throw an error if email is already taken', async () => {
       dbManager.findOne.mockResolvedValue({ id: '1', email: userData.email });
-      
+
       await expect(createUser(userData))
         .rejects
         .toThrow(new ApiError(httpStatus.BAD_REQUEST, `Your profile is incomplete, Try to login with ${userData.email}`));
-      
+
       expect(dbManager.findOne).toHaveBeenCalledWith('users', { email: userData.email });
     });
 
@@ -39,11 +39,11 @@ describe('User Service', () => {
       dbManager.findOne
         .mockResolvedValueOnce(null) // First call for email check
         .mockResolvedValueOnce({ id: '1', phone: userData.phone }); // Second call for phone check
-      
+
       await expect(createUser(userData))
         .rejects
         .toThrow(new ApiError(httpStatus.BAD_REQUEST, 'Phone already taken'));
-      
+
       expect(dbManager.findOne).toHaveBeenNthCalledWith(1, 'users', { email: userData.email });
       expect(dbManager.findOne).toHaveBeenNthCalledWith(2, 'users', { phone: userData.phone });
     });
@@ -54,9 +54,9 @@ describe('User Service', () => {
       dbManager.create.mockResolvedValue(createdUser);
       streamService.createUser.mockResolvedValue();
       realtimeService.emitEvent.mockResolvedValue();
-      
+
       const result = await createUser(userData);
-      
+
       expect(result).toEqual(createdUser);
       expect(dbManager.create).toHaveBeenCalledWith('users', userData);
       expect(streamService.createUser).toHaveBeenCalledWith(createdUser);
@@ -71,18 +71,18 @@ describe('User Service', () => {
   describe('isEmailTaken', () => {
     it('should return true if email is taken', async () => {
       dbManager.findOne.mockResolvedValue({ id: '1', email: 'test@example.com' });
-      
+
       const result = await isEmailTaken('test@example.com');
-      
+
       expect(result).toBe(true);
       expect(dbManager.findOne).toHaveBeenCalledWith('users', { email: 'test@example.com' });
     });
 
     it('should return false if email is not taken', async () => {
       dbManager.findOne.mockResolvedValue(null);
-      
+
       const result = await isEmailTaken('test@example.com');
-      
+
       expect(result).toBe(false);
       expect(dbManager.findOne).toHaveBeenCalledWith('users', { email: 'test@example.com' });
     });
@@ -91,18 +91,18 @@ describe('User Service', () => {
   describe('isPhoneTaken', () => {
     it('should return true if phone is taken', async () => {
       dbManager.findOne.mockResolvedValue({ id: '1', phone: '+1234567890' });
-      
+
       const result = await isPhoneTaken('+1234567890');
-      
+
       expect(result).toBe(true);
       expect(dbManager.findOne).toHaveBeenCalledWith('users', { phone: '+1234567890' });
     });
 
     it('should return false if phone is not taken', async () => {
       dbManager.findOne.mockResolvedValue(null);
-      
+
       const result = await isPhoneTaken('+1234567890');
-      
+
       expect(result).toBe(false);
       expect(dbManager.findOne).toHaveBeenCalledWith('users', { phone: '+1234567890' });
     });

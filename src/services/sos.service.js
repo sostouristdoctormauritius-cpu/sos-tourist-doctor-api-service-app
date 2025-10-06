@@ -16,28 +16,28 @@ const { getAvailableDoctors } = require('./doctor.service');
 const sendSOSNotifications = async (sosData) => {
   try {
     const { userId, location } = sosData;
-    
+
     // Get user details
     const user = await dbManager.findById('users', userId);
     if (!user) {
       throw new Error('User not found');
     }
-    
+
     // Get available doctors
     const availableDoctors = await getAvailableDoctors();
-    
+
     if (availableDoctors.length === 0) {
       logger.warn('No available doctors found for SOS request', { userId });
       // Send notification to admin if no doctors available
       await notifyAdminNoDoctorsAvailable(user, location);
       return { success: true, message: 'SOS registered, no doctors currently available' };
     }
-    
+
     // Send notifications to available doctors
-    const notificationPromises = availableDoctors.map(doctor => 
+    const notificationPromises = availableDoctors.map(doctor =>
       notifyDoctor(doctor, user, location)
     );
-    
+
     // Send SMS/email to emergency contacts
     const emergencyContactPromises = [];
     if (user.emergencyContacts && user.emergencyContacts.length > 0) {
@@ -45,21 +45,21 @@ const sendSOSNotifications = async (sosData) => {
         emergencyContactPromises.push(notifyEmergencyContact(contact, user, location));
       });
     }
-    
+
     // Trigger real-time notifications
     await triggerRealTimeNotifications(availableDoctors, user, location);
-    
+
     // Wait for all notifications to be sent
     await Promise.all([...notificationPromises, ...emergencyContactPromises]);
-    
-    logger.info('SOS notifications sent successfully', { 
-      userId, 
+
+    logger.info('SOS notifications sent successfully', {
+      userId,
       doctorsNotified: availableDoctors.length,
       emergencyContactsNotified: user.emergencyContacts ? user.emergencyContacts.length : 0
     });
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       message: 'SOS notifications sent to doctors and emergency contacts',
       doctorsNotified: availableDoctors.length
     };
@@ -81,7 +81,7 @@ const notifyDoctor = async (doctor, user, location) => {
     if (doctor.phone) {
       await twilioService.sendSMS(doctor.phone, `SOS ALERT: Patient ${user.name} needs immediate assistance. Location: https://maps.google.com/?q=${location.latitude},${location.longitude}`);
     }
-    
+
     // Send email notification to doctor
     if (doctor.email) {
       await emailService.sendEmail({
@@ -90,13 +90,13 @@ const notifyDoctor = async (doctor, user, location) => {
         text: `Patient ${user.name} has triggered an SOS alert and needs immediate assistance.\n\nLocation: https://maps.google.com/?q=${location.latitude},${location.longitude}\n\nPlease respond as soon as possible.`
       });
     }
-    
+
     logger.info('Doctor notified about SOS', { doctorId: doctor.id, userId: user.id });
   } catch (error) {
-    logger.error('Error notifying doctor about SOS', { 
-      error: error.message, 
-      doctorId: doctor.id, 
-      userId: user.id 
+    logger.error('Error notifying doctor about SOS', {
+      error: error.message,
+      doctorId: doctor.id,
+      userId: user.id
     });
   }
 };
@@ -113,7 +113,7 @@ const notifyEmergencyContact = async (contact, user, location) => {
     if (contact.phone) {
       await twilioService.sendSMS(contact.phone, `EMERGENCY ALERT: ${user.name} has triggered an SOS alert. Location: https://maps.google.com/?q=${location.latitude},${location.longitude}`);
     }
-    
+
     // Send email notification to emergency contact
     if (contact.email) {
       await emailService.sendEmail({
@@ -122,13 +122,13 @@ const notifyEmergencyContact = async (contact, user, location) => {
         text: `Your family member ${user.name} has triggered an SOS emergency alert.\n\nLocation: https://maps.google.com/?q=${location.latitude},${location.longitude}\n\nPlease check on them immediately.`
       });
     }
-    
+
     logger.info('Emergency contact notified about SOS', { contact, userId: user.id });
   } catch (error) {
-    logger.error('Error notifying emergency contact about SOS', { 
-      error: error.message, 
-      contact, 
-      userId: user.id 
+    logger.error('Error notifying emergency contact about SOS', {
+      error: error.message,
+      contact,
+      userId: user.id
     });
   }
 };
@@ -143,12 +143,12 @@ const triggerRealTimeNotifications = async (doctors, user, location) => {
   try {
     // This would integrate with your WebSocket implementation
     // For now, we'll just log that this would happen
-    logger.info('Real-time notifications triggered', { 
+    logger.info('Real-time notifications triggered', {
       doctorIds: doctors.map(d => d.id),
       userId: user.id,
       location
     });
-    
+
     // In a real implementation, you would emit events to connected doctors via WebSocket
     // Example:
     // doctors.forEach(doctor => {
@@ -159,7 +159,7 @@ const triggerRealTimeNotifications = async (doctors, user, location) => {
     //   });
     // });
   } catch (error) {
-    logger.error('Error triggering real-time notifications', { 
+    logger.error('Error triggering real-time notifications', {
       error: error.message,
       userId: user.id
     });
@@ -175,21 +175,21 @@ const notifyAdminNoDoctorsAvailable = async (user, location) => {
   try {
     // Get admin users from database
     const admins = await dbManager.findMany('users', { role: 'admin' });
-    
+
     // Send notifications to all admins
     const notificationPromises = admins.map(admin => {
       if (admin.phone) {
         return twilioService.sendSMS(admin.phone, `ADMIN ALERT: No doctors available for SOS from user ${user.name}. Location: https://maps.google.com/?q=${location.latitude},${location.longitude}`);
       }
     });
-    
+
     await Promise.all(notificationPromises);
-    
+
     logger.info('Admin notified about no available doctors', { userId: user.id });
   } catch (error) {
-    logger.error('Error notifying admin about no available doctors', { 
-      error: error.message, 
-      userId: user.id 
+    logger.error('Error notifying admin about no available doctors', {
+      error: error.message,
+      userId: user.id
     });
   }
 };

@@ -37,7 +37,7 @@ class DbManager {
   async create(table, data) {
     const startTime = Date.now();
     let errorOccurred = false;
-    
+
     try {
       this._checkClient();
       logger.info(`Attempting to create record in ${table}`, { data });
@@ -68,7 +68,7 @@ class DbManager {
   async findById(table, id, populate = []) {
     const startTime = Date.now();
     let errorOccurred = false;
-    
+
     try {
       this._checkClient();
       const result = await this.supabaseAdapter.findById(table, id, populate);
@@ -86,7 +86,7 @@ class DbManager {
   async findMany(table, query, populate = []) {
     const startTime = Date.now();
     let errorOccurred = false;
-    
+
     try {
       this._checkClient();
       const result = await this.supabaseAdapter.findMany(table, query, populate);
@@ -104,7 +104,7 @@ class DbManager {
   async findOne(table, query, populate = []) {
     const startTime = Date.now();
     let errorOccurred = false;
-    
+
     try {
       this._checkClient();
       logger.info('dbManager.findOne called with:', { table, query, populate });
@@ -129,7 +129,7 @@ class DbManager {
   async update(table, id, data) {
     const startTime = Date.now();
     let errorOccurred = false;
-    
+
     try {
       this._checkClient();
       const result = await this.supabaseAdapter.update(table, id, data);
@@ -147,7 +147,7 @@ class DbManager {
   async delete(table, id) {
     const startTime = Date.now();
     let errorOccurred = false;
-    
+
     try {
       this._checkClient();
       const result = await this.supabaseAdapter.delete(table, id);

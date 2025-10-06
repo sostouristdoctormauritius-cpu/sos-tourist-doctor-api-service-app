@@ -6,7 +6,6 @@ const logger = require('../config/logger');
 const httpStatus = require('http-status').default || require('http-status');
 const ApiError = require('../utils/ApiError');
 const { JsonWebTokenError, TokenExpiredError } = require('jsonwebtoken');
-const { createClient } = require('@supabase/supabase-js');
 
 // Simple JWT strategy using Supabase
 const jwtOptions = {

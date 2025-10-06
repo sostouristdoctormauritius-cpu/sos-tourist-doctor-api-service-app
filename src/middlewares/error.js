@@ -1,7 +1,7 @@
 const httpStatus = require('http-status');
 const config = require('../config/config');
 const logger = require('../config/logger');
-const { 
+const {
   ApiError,
   ValidationError,
   AuthenticationError,
@@ -13,7 +13,7 @@ const {
 
 const errorConverter = (err, req, res, next) => {
   let error = err;
-  
+
   // Log the original error for debugging
   logger.error('Error occurred:', {
     name: err.name,
@@ -30,7 +30,7 @@ const errorConverter = (err, req, res, next) => {
     const message = error.message || httpStatus[statusCode];
     error = new ApiError(statusCode, message, false, err.stack);
   }
-  
+
   next(error);
 };
 

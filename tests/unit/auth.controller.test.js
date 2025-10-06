@@ -40,11 +40,11 @@ describe('Auth Controller', () => {
 
   beforeEach(() => {
     req = {
-      body: {},
+      body: {}
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
+      json: jest.fn()
     };
     next = jest.fn();
     jest.clearAllMocks();

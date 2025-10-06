@@ -10,7 +10,6 @@ const config = require('../config/config');
 const moment = require('../config/timezone');
 const realtimeService = require('./realtime.service');
 const crypto = require('crypto');
-const otpService = require('./otp.service');
 
 /**
  * Create a user

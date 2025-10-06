@@ -1,14 +1,11 @@
 const express = require('express');
 const config = require('../../config/config');
-const logger = require('../../config/logger');
 const socketService = require('../../services/socket.service');
 const dbHealthCheckService = require('../../services/dbHealthCheck.service');
 const metricsService = require('../../services/metrics.service');
 
 const router = express.Router();
 const catchAsync = require('../../utils/catchAsync');
-const { NotFoundError } = require('../../utils/errors');
-const httpStatus = require('http-status');
 
 // Health check endpoint for load balancers and monitoring
 router.get('/', catchAsync(async (req, res) => {
@@ -51,7 +48,7 @@ router.get('/details', catchAsync(async (req, res) => {
 
   // Get memory usage
   const memoryUsage = process.memoryUsage();
-  
+
   // Get metrics
   const metrics = metricsService.getMetrics();
 
@@ -76,7 +73,6 @@ router.get('/details', catchAsync(async (req, res) => {
       database: metrics.database,
       users: metrics.users,
       errors: metrics.errors
-    }
     }
   });
 }));

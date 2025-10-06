@@ -4,7 +4,7 @@ const config = require('./config');
 // Custom format for structured logging
 const enumerateErrorFormat = winston.format((info) => {
   if (info instanceof Error) {
-    Object.assign(info, { 
+    Object.assign(info, {
       message: info.message,
       stack: info.stack
     });
@@ -13,12 +13,12 @@ const enumerateErrorFormat = winston.format((info) => {
 });
 
 // JSON format for production, simple format for development
-const logFormat = config.env === 'production' 
+const logFormat = config.env === 'production'
   ? winston.format.json()
   : winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    );
+    winston.format.colorize(),
+    winston.format.simple()
+  );
 
 const logger = winston.createLogger({
   level: config.env === 'development' ? 'debug' : 'info',
@@ -41,7 +41,7 @@ if (config.env === 'production') {
   const fs = require('fs');
   const path = require('path');
   const logsDir = path.join(__dirname, '../../logs');
-  
+
   if (!fs.existsSync(logsDir)) {
     try {
       fs.mkdirSync(logsDir, { recursive: true });
@@ -50,7 +50,7 @@ if (config.env === 'production') {
       console.warn('Could not create logs directory, using console only');
     }
   }
-  
+
   if (fs.existsSync(logsDir)) {
     logger.add(new winston.transports.File({
       filename: path.join(logsDir, 'error.log'),
@@ -58,7 +58,7 @@ if (config.env === 'production') {
       maxsize: 5242880, // 5MB
       maxFiles: 5
     }));
-    
+
     logger.add(new winston.transports.File({
       filename: path.join(logsDir, 'combined.log'),
       maxsize: 5242880, // 5MB

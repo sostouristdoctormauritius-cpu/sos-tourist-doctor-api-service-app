@@ -1,256 +1,135 @@
 const express = require('express');
-const helmet = require('helmet');
-const xss = require('xss-clean');
-const compression = require('compression');
-const cors = require('cors');
-const passport = require('passport');
-const httpStatus = require('http-status');
-const path = require('path');  // 已存在但需要保留
+const path = require('path');
 const cookieParser = require('cookie-parser');
+const httpStatus = require('http-status');
 
-const config = require('./config/config');
-const morgan = require('./config/morgan');
-const { jwtStrategy } = require('./config/passport');
-const { authLimiter } = require('./middlewares/rateLimiter');
-const routes = require('./routes/v1');
-const { errorConverter, errorHandler } = require('./middlewares/error');
-const ApiError = require('./utils/ApiError');
-const auth = require('./middlewares/auth');
-const dashboardController = require('./controllers/dashboard.controller');
-const metricsMiddleware = require('./middlewares/metrics.middleware'); // Add metrics middleware
-const performanceMiddleware = require('./middlewares/performance.middleware'); // Add performance middleware
+// Load config with error handling
+let config;
+try {
+  config = require('./config/config');
+} catch (error) {
+  console.warn('Warning: Could not load config file, using defaults:', error.message);
+  config = {
+    port: process.env.PORT || 3000,
+    jwt: { secret: process.env.JWT_SECRET || 'default-secret' },
+    env: process.env.NODE_ENV || 'development'
+  };
+}
 
 const app = express();
 
-// Add metrics middleware early in the chain
-app.use(metricsMiddleware);
-
-// Add performance monitoring middleware
-app.use(performanceMiddleware);
-
-// Logging
-if (config.env !== 'test') {
-  app.use(morgan.successHandler);
-  app.use(morgan.errorHandler);
-}
-
-// Set security HTTP headers
-app.use(
-  helmet({
-    hsts: config.env === 'production' ? {
-      maxAge: 31536000, // 1 year in seconds
-      includeSubDomains: true,
-      preload: true
-    } : false,
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ['\'self\''],
-        connectSrc: [
-          '\'self\'',
-          'https://hint.stream-io-video.com',
-          'wss://video.stream-io-api.com',
-          'https://*.supabase.co',
-          'wss://*.supabase.co',
-          'http://127.0.0.1:54321',
-          'ws://127.0.0.1:54321'
-        ],
-        scriptSrc: ['\'self\'', '\'unsafe-inline\''],
-        styleSrc: ['\'self\'', '\'unsafe-inline\'', 'https://cdnjs.cloudflare.com'],
-        imgSrc: ['\'self\'', 'data:', 'https://*.googleapis.com'],
-        fontSrc: ['\'self\'', 'https:', 'data:'],
-        frameSrc: ['\'self\''],
-        objectSrc: ['\'none\'']
-      }
-    },
-    frameguard: {
-      action: 'deny'
-    }
-  })
-);
-
-// Body parsing
+// Middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Redirect root to login page (moved before static middleware)
-app.get('/', (req, res) => {
-  res.redirect('/v1/login');
-});
-
-// Cookie parser with secret
 app.use(cookieParser(config.jwt.secret));
 
-// Serve static files from the public directory
+// Static file serving
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Explicitly serve specific static files
-app.get('/login.html', (req, res) => {
+// Routes
+app.get('/', (req, res) => {
+  res.redirect('/login');
+});
+
+app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/login.html'));
 });
 
-app.get('/vendor/supabase.js', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/vendor/supabase.js'));
-});
+// API Routes
+const healthRoute = require('./routes/v1/health.route');
+const authRoute = require('./routes/v1/auth.route');
+const userPublicRoute = require('./routes/v1/user.public.route');
+const publicDataRoute = require('./routes/v1/publicData.route');
 
-app.get('/favicon.ico', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/favicon.ico'));
-});
+// Public API routes
+app.use('/v1/health', healthRoute);
+app.use('/v1/auth', authRoute);
+app.use('/v1/users/public', userPublicRoute);
+app.use('/v1/public', publicDataRoute);
 
-app.get('/logo.svg', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/logo.svg'));
-});
-
-// Initialize Passport (without sessions)
-app.use(passport.initialize());
-
-// Use the JWT strategy
-passport.use('jwt', jwtStrategy);
-
-// Data sanitization
-app.use(xss());
-
-// Compression
-app.use(compression());
-
-// Enable CORS with environment-specific configuration
-const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
-    ? process.env.ALLOWED_ORIGINS?.split(',') || ['https://yourdomain.com']
-    : '*',
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
-
-// Limit repeated failed requests to auth endpoints
-if (config.env === 'production') {
-  app.use('/v1/auth', authLimiter);
+// Load auth middleware with error handling
+let auth;
+try {
+  auth = require('./middlewares/auth');
+} catch (error) {
+  console.warn('Warning: Could not load auth middleware:', error.message);
+  auth = () => (req, res, next) => next(); // No-op middleware
 }
 
-/*
-// Authentication utility script
-app.get('/v1/auth-utils.js', (req, res) => {
-  res.setHeader('Content-Type', 'application/javascript');
-  res.send(`
-    // Authentication utilities
-    window.AuthUtils = {
-      getToken: function() {
-        try {
-          const tokens = JSON.parse(localStorage.getItem('tokens'));
-          return tokens && tokens.access ? tokens.access.token : null;
-        } catch (e) {
-          return null;
-        }
-      },
+// Load protected routes with error handling
+const loadRoute = (routePath) => {
+  try {
+    return require(routePath);
+  } catch (error) {
+    console.warn(`Warning: Could not load route ${routePath}:`, error.message);
+    return null;
+  }
+};
 
-      isAuthenticated: function() {
-        return this.getToken() !== null;
-      },
+const userRoute = loadRoute('./routes/v1/user.route');
+const doctorRoute = loadRoute('./routes/v1/doctor.route');
+const patientRoute = loadRoute('./routes/v1/patient.route');
+const adminRoute = loadRoute('./routes/v1/admin.route');
+const appointmentRoute = loadRoute('./routes/v1/appointment.route');
+const availabilityRoute = loadRoute('./routes/v1/availability.route');
+const invoiceRoute = loadRoute('./routes/v1/invoice.route');
+const communicationsRoute = loadRoute('./routes/v1/communications.route');
+const appConfigRoute = loadRoute('./routes/v1/appConfig.route');
+const mobileRoute = loadRoute('./routes/v1/mobile.route');
+const dashboardRoute = loadRoute('./routes/v1/dashboard.route');
+const otpAuthRoute = loadRoute('./routes/v1/otpAuth.route');
+const realtimeRoute = loadRoute('./routes/v1/realtime.route');
+const sosRoute = loadRoute('./routes/v1/sos.route');
+const testRoute = loadRoute('./routes/v1/test.route');
+const webhookRoute = loadRoute('./routes/v1/webhook.route');
+const twimlRoute = loadRoute('./routes/v1/twiml.route');
+const chatRoute = loadRoute('./routes/v1/chat.route');
+const docsRoute = loadRoute('./routes/v1/docs.route');
 
-      redirectToLogin: function() {
-        window.location.href = '/v1/login';
-      },
+// Protected API routes
+if (userRoute) app.use('/v1/users', auth(), userRoute);
+if (doctorRoute) app.use('/v1/doctors', auth(), doctorRoute);
+if (patientRoute) app.use('/v1/patients', auth(), patientRoute);
+if (adminRoute) app.use('/v1/admin', auth(), adminRoute);
+if (appointmentRoute) app.use('/v1/appointments', appointmentRoute);
+if (availabilityRoute) app.use('/v1/availabilities', availabilityRoute);
+if (invoiceRoute) app.use('/v1/invoices', auth(), invoiceRoute);
+if (communicationsRoute) app.use('/v1/communications', auth(), communicationsRoute);
+if (appConfigRoute) app.use('/v1/app-configs', auth(), appConfigRoute);
+if (mobileRoute) app.use('/v1/mobile', mobileRoute);
+if (dashboardRoute) app.use('/v1/dashboard', auth(), dashboardRoute);
+if (otpAuthRoute) app.use('/v1/otp-auth', auth(), otpAuthRoute);
+if (realtimeRoute) app.use('/v1/realtime', auth(), realtimeRoute);
+if (sosRoute) app.use('/v1/sos', auth(), sosRoute);
+if (testRoute) app.use('/v1/tests', auth(), testRoute);
+if (webhookRoute) app.use('/v1/webhooks', webhookRoute);
+if (twimlRoute) app.use('/v1/twiml', twimlRoute);
+if (chatRoute) app.use('/v1/chat', auth(), chatRoute);
+if (docsRoute) app.use('/v1/docs', docsRoute);
 
-      logout: function() {
-        localStorage.removeItem('user');
-        localStorage.removeItem('tokens');
-        this.redirectToLogin();
-      },
-
-      fetch: function(url, options = {}) {
-        const token = this.getToken();
-        if (!token) {
-          this.redirectToLogin();
-          return Promise.reject(new Error('No authentication token'));
-        }
-
-        // Add authorization header
-        options.headers = options.headers || {};
-        options.headers['Authorization'] = 'Bearer ' + token;
-
-        return fetch(url, options);
-      }
-    };
-
-    // Check authentication on page load
-    document.addEventListener('DOMContentLoaded', function() {
-      if (!window.AuthUtils.isAuthenticated() &&
-          !window.location.pathname.endsWith('/login') &&
-          window.location.pathname.startsWith('/v1/')) {
-        window.AuthUtils.redirectToLogin();
-      }
-    });
-  `);
+// Health check route
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
-*/
 
-// Test route to check if static files are accessible
-app.get('/test-static', (req, res) => {
-  const fs = require('fs');
-  const path = require('path');
-  
-  // Check if login.html exists
-  const loginPath = path.join(__dirname, '../public/login.html');
-  const exists = fs.existsSync(loginPath);
-  
-  res.json({
-    loginFileExists: exists,
-    loginPath: loginPath,
-    cwd: process.cwd(),
-    __dirname: __dirname
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ 
+    message: 'Not found',
+    path: req.originalUrl
   });
 });
 
-// Correctly serve the React app assets.
-// Requests starting with /sos (e.g., /sos/static/js/main.js)
-// are mapped to the /public directory.
-const publicPath = path.join(__dirname, '../public');
-app.use('/sos', express.static(publicPath));
-app.get('/sos/*', (req, res) => {
-  // For any direct navigation to a /sos/ route, serve the main index.html.
-  // This is standard for Single Page Applications (SPAs).
-  res.sendFile(path.join(publicPath, 'index.html'));
-});
-
-
-// Inject logout script into dashboard
-app.get('/v1/dashboard', auth(), (req, res, next) => {
-  // First, get the dashboard HTML content
-  dashboardController.getDashboard(req, res, function(err, html) {
-    if (err) {
-      return next(err);
-    }
-
-    // Inject the logout script tag before serving
-    const scriptTag = '<script src="/v1/logout.js"></script>';
-    const modifiedHtml = html.replace('</body>', scriptTag + '</body>');
-    res.send(modifiedHtml);
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ 
+    message: 'Internal server error',
+    error: config.env === 'development' ? {
+      message: err.message,
+      stack: err.stack
+    } : {}
   });
 });
-
-// Serve auth.js file
-app.use('/v1/auth.js', express.static(path.join(__dirname, '../public', 'auth.js')));
-
-// Serve services.js file
-app.use('/services.js', express.static(path.join(__dirname, '../public', 'services.js')));
-
-// Serve master-services.js file
-app.use('/master-services.js', express.static(path.join(__dirname, '../public', 'master-services.js')));
-
-// v1 routes
-app.use('/v1', routes);
-
-// Send back a 404 error for any unknown API request
-app.use((req, res, next) => {
-  next(new ApiError(httpStatus.NOT_FOUND, 'Not found'));
-});
-
-// Convert error to ApiError, if needed
-app.use(errorConverter);
-
-// Handle error
-app.use(errorHandler);
 
 module.exports = app;

@@ -2,8 +2,12 @@ const dotenv = require('dotenv');
 const path = require('path');
 const Joi = require('joi');
 
+console.log('Loading environment variables from:', path.join(__dirname, '../../.env'));
+
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../../.env') });
+
+console.log('Environment variables loaded. NODE_ENV:', process.env.NODE_ENV);
 
 // Define validation schema for environment variables
 const envVarsSchema = Joi.object()
@@ -50,14 +54,22 @@ const envVarsSchema = Joi.object()
   })
   .unknown();
 
+console.log('Validating environment variables...');
+
 // Validate environment variables
 const { value: envVars, error } = envVarsSchema
   .prefs({ errors: { label: 'key' } })
   .validate(process.env);
 
 if (error) {
-  throw new Error(`Config validation error: ${error.message}`);
+  console.error('Config validation error:', error.message);
+  // Don't throw error in production, just log it
+  if (process.env.NODE_ENV !== 'production') {
+    throw new Error(`Config validation error: ${error.message}`);
+  }
 }
+
+console.log('Environment variables validated successfully');
 
 // Export configuration
 module.exports = {

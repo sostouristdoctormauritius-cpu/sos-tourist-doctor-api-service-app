@@ -79,8 +79,6 @@ const register = catchAsync(async (req, res) => {
 });
 
 const authenticateUser = async (email, password, requiredRole = null) => {
-  const supabase = getSupabaseClient();
-
   logger.info('Attempting Supabase authentication', { email });
 
   // Use Supabase's native sign in method with email/password

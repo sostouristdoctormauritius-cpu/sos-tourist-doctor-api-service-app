@@ -27,6 +27,25 @@ app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/login.html'));
 });
 
+// API Routes - Load with error handling
+try {
+  const healthRoute = require('./routes/v1/health.route');
+  const authRoute = require('./routes/v1/auth.route');
+  const userPublicRoute = require('./routes/v1/user.public.route');
+  const publicDataRoute = require('./routes/v1/publicData.route');
+
+  // Public API routes
+  app.use('/v1/health', healthRoute);
+  app.use('/v1/auth', authRoute);
+  app.use('/v1/users/public', userPublicRoute);
+  app.use('/v1/public', publicDataRoute);
+
+  console.log('✅ API routes loaded successfully');
+} catch (error) {
+  console.error('❌ Error loading API routes:', error.message);
+  console.error('Stack:', error.stack);
+}
+
 // Middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -35,17 +54,7 @@ app.use(cookieParser(config.jwt.secret));
 // Static file serving
 app.use(express.static(path.join(__dirname, '../public')));
 
-// API Routes
-const healthRoute = require('./routes/v1/health.route');
-const authRoute = require('./routes/v1/auth.route');
-const userPublicRoute = require('./routes/v1/user.public.route');
-const publicDataRoute = require('./routes/v1/publicData.route');
-
-// Public API routes
-app.use('/v1/health', healthRoute);
-app.use('/v1/auth', authRoute);
-app.use('/v1/users/public', userPublicRoute);
-app.use('/v1/public', publicDataRoute);
+// API Routes (loaded above with error handling)
 
 // Load auth middleware with error handling
 let auth;
@@ -132,7 +141,5 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
-
-module.exports = app;
 
 module.exports = app;

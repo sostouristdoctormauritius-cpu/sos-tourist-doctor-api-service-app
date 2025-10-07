@@ -304,7 +304,7 @@
             btnText.textContent = 'Authenticating...';
             
             try {
-                const response = await fetch('/v1/auth/login-admin', {
+                const response = await fetch('/api/v1/auth/login-admin', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

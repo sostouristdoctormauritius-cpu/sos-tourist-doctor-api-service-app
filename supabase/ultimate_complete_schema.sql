@@ -663,3 +663,4 @@ WHERE schemaname = 'public';
 
 -- Final success message
 SELECT '✅ SOS Tourist Doctor database schema is ready for use!' as final_message;
+

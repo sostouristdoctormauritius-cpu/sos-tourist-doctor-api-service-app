@@ -5,6 +5,7 @@
 -- 10 doctors
 -- 20 patients
 
+
 -- Temporarily disable audit triggers to avoid issues during seeding
 ALTER TABLE public.users DISABLE TRIGGER users_audit_trigger;
 ALTER TABLE public.user_profiles DISABLE TRIGGER user_profiles_audit_trigger;

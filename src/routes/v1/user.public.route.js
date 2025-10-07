@@ -114,7 +114,7 @@ router
  */
 router
   .route('/clients')
-  .get(userController.getClients);
+  .get(validate(userValidation.getUsers), userController.getUsers);
 
 /**
  * @swagger
@@ -156,7 +156,7 @@ router
  *           default: 1
  *     responses:
  *       200:
- *         description: Filtered doctors retrieved successfully
+ *         description: Doctors retrieved successfully
  *         content:
  *           application/json:
  *             schema:

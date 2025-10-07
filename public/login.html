@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ED1C24 0%, #009147 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -30,18 +30,18 @@
             width: 100%;
         }
 
-        .logo {
+        .logo-container {
             width: 120px;
             height: 120px;
             margin: 0 auto 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
-            color: white;
-            font-weight: bold;
+        }
+        
+        .logo-svg {
+            width: 100%;
+            height: auto;
         }
 
         .logo-text {
@@ -83,13 +83,13 @@
 
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #009147;
         }
 
         .login-btn {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ED1C24 0%, #009147 100%);
             color: white;
             border: none;
             border-radius: 10px;
@@ -109,7 +109,7 @@
         }
 
         .forgot-password a {
-            color: #667eea;
+            color: #009147;
             text-decoration: none;
             font-size: 14px;
         }
@@ -133,8 +133,8 @@
 </head>
 <body>
     <div class="login-container">
-        <div class="logo">
-            🏥
+        <div class="logo-container">
+            <img src="logo.svg" alt="SOS Tourist Doctor Logo" class="logo-svg">
         </div>
 
         <h1 class="logo-text">SOS Tourist Doctor</h1>

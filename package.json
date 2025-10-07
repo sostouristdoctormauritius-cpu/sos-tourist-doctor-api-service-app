@@ -57,6 +57,7 @@
     "stream-chat": "^8.11.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "twilio": "^4.23.0",
     "uuid": "^9.0.1",
     "validator": "^13.11.0",
     "winston": "^3.17.0",

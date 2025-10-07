@@ -1,11 +1,67 @@
--- Unified Supabase Schema
--- This file contains the complete and consistent schema for the SOS Tourist Doctor API
+-- ULTIMATE COMPLETE SOS Tourist Doctor Database Schema
+-- Combines the best of both fresh_unified_schema.sql and clean_and_recreate.sql
+-- Includes comprehensive cleanup, schema creation, policies, and sample data
+
+-- =============================================================================
+-- STEP 1: COMPLETE DATABASE CLEANUP
+-- =============================================================================
+
+-- Disable foreign key checks temporarily to allow dropping tables
+SET session_replication_role = 'replica';
+
+-- Drop all triggers with comprehensive cleanup
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    -- Drop all triggers
+    FOR r IN (SELECT trigger_name, event_object_table FROM information_schema.triggers WHERE trigger_schema = 'public') LOOP
+        EXECUTE 'DROP TRIGGER IF EXISTS ' || quote_ident(r.trigger_name) || ' ON ' || quote_ident(r.event_object_table) || ' CASCADE';
+    END LOOP;
+
+    -- Drop all policies
+    FOR r IN (SELECT pol.polname, cls.relname FROM pg_policy pol JOIN pg_class cls ON pol.polrelid = cls.oid JOIN pg_namespace nsp ON cls.relnamespace = nsp.oid WHERE nsp.nspname = 'public') LOOP
+        EXECUTE 'DROP POLICY IF EXISTS ' || quote_ident(r.polname) || ' ON public.' || quote_ident(r.relname) || ' CASCADE';
+    END LOOP;
+
+    -- Drop all sequences
+    FOR r IN (SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public') LOOP
+        EXECUTE 'DROP SEQUENCE IF EXISTS public.' || quote_ident(r.sequence_name) || ' CASCADE';
+    END LOOP;
+
+    -- Drop all functions
+    FOR r IN (SELECT proname, oid FROM pg_proc WHERE pronamespace = 'public'::regnamespace AND proname NOT IN (
+        'uuid_generate_v1', 'uuid_generate_v1mc', 'uuid_generate_v3', 'uuid_generate_v4', 'uuid_generate_v5', 'uuid_nil', 'uuid_ns_dns', 'uuid_ns_url', 'uuid_ns_oid', 'uuid_ns_x500'
+    )) LOOP
+        EXECUTE 'DROP FUNCTION IF EXISTS public.' || quote_ident(r.proname) || ' CASCADE';
+    END LOOP;
+
+    -- Drop all types
+    FOR r IN (SELECT typname FROM pg_type WHERE typnamespace = 'public'::regnamespace AND typtype = 'e') LOOP
+        EXECUTE 'DROP TYPE IF EXISTS public.' || quote_ident(r.typname) || ' CASCADE';
+    END LOOP;
+
+    -- Drop all tables
+    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+        EXECUTE 'DROP TABLE IF EXISTS public.' || quote_ident(r.tablename) || ' CASCADE';
+    END LOOP;
+END $$;
+
+-- Drop extension if it exists
+DROP EXTENSION IF EXISTS "uuid-ossp" CASCADE;
+
+-- Re-enable foreign key checks
+SET session_replication_role = 'origin';
+
+-- =============================================================================
+-- STEP 2: CREATE FRESH SCHEMA WITH ALL TABLES
+-- =============================================================================
 
 -- Create uuid-ossp extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create ENUM Types
-CREATE TYPE user_role_enum AS ENUM ('user', 'doctor', 'admin');
+-- Create ENUM Types (comprehensive list)
+CREATE TYPE user_role_enum AS ENUM ('user', 'doctor', 'admin', 'secretary');
 CREATE TYPE user_status_enum AS ENUM ('pending', 'active', 'blocked');
 CREATE TYPE appointment_status_enum AS ENUM ('pending_payment', 'payment_completed', 'payment_failed', 'confirmed', 'completed', 'cancelled');
 CREATE TYPE consultation_type_enum AS ENUM ('home', 'online', 'chat', 'video');
@@ -13,7 +69,10 @@ CREATE TYPE invoice_status_enum AS ENUM ('pending_payment', 'payment_completed',
 CREATE TYPE token_type_enum AS ENUM ('refresh', 'reset_password', 'verify_email', 'temp_token');
 CREATE TYPE recurrence_enum AS ENUM ('daily', 'weekly', 'monthly');
 
--- Create Tables
+-- =============================================================================
+-- CREATE ALL TABLES WITH PROPER RELATIONSHIPS
+-- =============================================================================
+
 CREATE TABLE public.users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT,
@@ -55,17 +114,6 @@ CREATE TABLE public.doctor_profiles (
     bio TEXT,
     is_listed BOOLEAN DEFAULT FALSE NOT NULL,
     supported_languages VARCHAR(50)[]
-);
-
-CREATE TABLE public.app_configs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    key TEXT UNIQUE NOT NULL,
-    description TEXT,
-    configs JSONB NOT NULL,
-    creator UUID REFERENCES public.users(id) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    CONSTRAINT valid_key_format CHECK (key ~ '^[a-zA-Z0-9_]+$')
 );
 
 CREATE TABLE public.appointments (
@@ -170,53 +218,21 @@ CREATE TABLE public.tokens (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create Audit Logging Function
-CREATE OR REPLACE FUNCTION public.log_changes()
-RETURNS TRIGGER AS $$
-DECLARE
-    user_id TEXT;
-BEGIN
-    -- Get the user ID from the JWT claims
-    user_id := current_setting('request.jwt.claim.sub', true);
-    
-    -- If we can't get the user ID, use the current user
-    IF user_id IS NULL THEN
-        user_id := current_user;
-    END IF;
-    
-    -- Insert the audit log entry
-    INSERT INTO public.audit_logs (table_name, operation, record_id, old_values, new_values, changed_by)
-    VALUES (
-        TG_TABLE_NAME,
-        TG_OP,
-        COALESCE(NEW.id, OLD.id),
-        CASE WHEN TG_OP IN ('UPDATE', 'DELETE') THEN row_to_json(OLD)::TEXT ELSE NULL END,
-        CASE WHEN TG_OP IN ('INSERT', 'UPDATE') THEN row_to_json(NEW)::TEXT ELSE NULL END,
-        user_id
-    );
-    
-    -- Return the appropriate record
-    IF TG_OP = 'DELETE' THEN
-        RETURN OLD;
-    ELSE
-        RETURN NEW;
-    END IF;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Create Audit Logs Table
-CREATE TABLE public.audit_logs (
+CREATE TABLE public.app_configs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    table_name TEXT NOT NULL,
-    operation TEXT NOT NULL,
-    record_id UUID,
-    old_values JSONB,
-    new_values JSONB,
-    changed_by TEXT,
-    changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    key TEXT UNIQUE NOT NULL,
+    description TEXT,
+    configs JSONB NOT NULL,
+    creator UUID REFERENCES public.users(id) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT valid_key_format CHECK (key ~ '^[a-zA-Z0-9_]+$')
 );
 
--- Create Indexes
+-- =============================================================================
+-- STEP 3: CREATE COMPREHENSIVE INDEXES FOR PERFORMANCE
+-- =============================================================================
+
 CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON public.users(phone);
 CREATE INDEX IF NOT EXISTS idx_users_role ON public.users(role);
@@ -256,11 +272,13 @@ CREATE INDEX IF NOT EXISTS idx_medical_histories_patient_id ON public.medical_hi
 CREATE INDEX IF NOT EXISTS idx_medical_histories_doctor_id ON public.medical_histories(doctor_id);
 CREATE INDEX IF NOT EXISTS idx_medical_histories_appointment_id ON public.medical_histories(appointment_id);
 
--- Enable Row Level Security (RLS)
+-- =============================================================================
+-- STEP 4: ENABLE ROW LEVEL SECURITY (RLS) ON ALL TABLES
+-- =============================================================================
+
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.doctor_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.app_configs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.availabilities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.doctor_notes ENABLE ROW LEVEL SECURITY;
@@ -269,42 +287,36 @@ ALTER TABLE public.prescriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.medications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.medical_histories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.app_configs ENABLE ROW LEVEL SECURITY;
 
--- Create RLS Policies
+-- =============================================================================
+-- STEP 5: CREATE COMPREHENSIVE RLS POLICIES
+-- =============================================================================
+
 -- Users table policies
 CREATE POLICY "Users can view their own profile" ON public.users FOR SELECT USING (id = auth.uid());
 CREATE POLICY "Users can update their own profile" ON public.users FOR UPDATE USING (id = auth.uid());
 CREATE POLICY "Admins can view all users" ON public.users FOR SELECT USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 CREATE POLICY "Admins can update any user" ON public.users FOR UPDATE USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 CREATE POLICY "Admins can insert users" ON public.users FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
-CREATE POLICY "System can delete users" ON public.users FOR DELETE USING (false);
 
 -- User profiles table policies
 CREATE POLICY "Users can view their own profile" ON public.user_profiles FOR SELECT USING (user_id = auth.uid());
 CREATE POLICY "Users can update their own profile" ON public.user_profiles FOR UPDATE USING (user_id = auth.uid());
 CREATE POLICY "Admins can view all user profiles" ON public.user_profiles FOR SELECT USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 CREATE POLICY "Admins can update any user profile" ON public.user_profiles FOR UPDATE USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
-CREATE POLICY "System can delete user profiles" ON public.user_profiles FOR DELETE USING (false);
 
 -- Doctor profiles table policies
 CREATE POLICY "Doctors and patients can view doctor profiles" ON public.doctor_profiles FOR SELECT USING (
-    user_id = auth.uid() OR 
+    user_id = auth.uid() OR
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid())
 );
 CREATE POLICY "Doctors can update their own profile" ON public.doctor_profiles FOR UPDATE USING (user_id = auth.uid());
-CREATE POLICY "System can delete doctor profiles" ON public.doctor_profiles FOR DELETE USING (false);
-
--- App configs table policies
-CREATE POLICY "Admins can view app configs" ON public.app_configs FOR SELECT USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
-CREATE POLICY "Admins can create app configs" ON public.app_configs FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
-CREATE POLICY "Admins can update app configs" ON public.app_configs FOR UPDATE USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
-CREATE POLICY "System can delete app configs" ON public.app_configs FOR DELETE USING (false);
 
 -- Appointments table policies
 CREATE POLICY "Users can view their own appointments" ON public.appointments FOR SELECT USING (user_id = auth.uid() OR doctor_id = auth.uid());
 CREATE POLICY "Users can create their own appointments" ON public.appointments FOR INSERT WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Users can update their own appointments" ON public.appointments FOR UPDATE USING (user_id = auth.uid() OR doctor_id = auth.uid());
-CREATE POLICY "System can delete appointments" ON public.appointments FOR DELETE USING (false);
 
 -- Availabilities table policies
 CREATE POLICY "Users can view availabilities" ON public.availabilities FOR SELECT USING (true);
@@ -321,14 +333,11 @@ CREATE POLICY "Doctors can delete their own notes" ON public.doctor_notes FOR DE
 -- Invoices table policies
 CREATE POLICY "Users can view their own invoices" ON public.invoices FOR SELECT USING (
     EXISTS (
-        SELECT 1 FROM public.appointments 
-        WHERE appointments.id = invoices.appointment_id 
+        SELECT 1 FROM public.appointments
+        WHERE appointments.id = invoices.appointment_id
         AND (appointments.user_id = auth.uid() OR appointments.doctor_id = auth.uid())
     )
 );
-CREATE POLICY "System can create invoices" ON public.invoices FOR INSERT WITH CHECK (true);
-CREATE POLICY "System can update invoices" ON public.invoices FOR UPDATE USING (true);
-CREATE POLICY "System can delete invoices" ON public.invoices FOR DELETE USING (false);
 
 -- Prescriptions table policies
 CREATE POLICY "Doctors and patients can view prescriptions" ON public.prescriptions FOR SELECT USING (patient_id = auth.uid() OR doctor_id = auth.uid());
@@ -340,25 +349,95 @@ CREATE POLICY "Doctors can delete their own prescriptions" ON public.prescriptio
 CREATE POLICY "Doctors and patients can view medications" ON public.medications FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.prescriptions WHERE id = prescription_id AND (patient_id = auth.uid() OR doctor_id = auth.uid()))
 );
-CREATE POLICY "System can manage medications" ON public.medications FOR ALL USING (true) WITH CHECK (true);
 
 -- Tokens table policies
 CREATE POLICY "Users can view their own tokens" ON public.tokens FOR SELECT USING (user_id = auth.uid());
-CREATE POLICY "System can manage tokens" ON public.tokens FOR ALL USING (true) WITH CHECK (true);
 
 -- Medical histories table policies
 CREATE POLICY "Patients and their doctors can view medical histories" ON public.medical_histories FOR SELECT USING (
-    patient_id = auth.uid() OR 
+    patient_id = auth.uid() OR
     doctor_id = auth.uid() OR
     EXISTS (
-        SELECT 1 FROM public.appointments 
-        WHERE appointments.id = medical_histories.appointment_id 
+        SELECT 1 FROM public.appointments
+        WHERE appointments.id = medical_histories.appointment_id
         AND (appointments.user_id = auth.uid() OR appointments.doctor_id = auth.uid())
     )
 );
 CREATE POLICY "Doctors can create medical histories for their patients" ON public.medical_histories FOR INSERT WITH CHECK (doctor_id = auth.uid());
 CREATE POLICY "Doctors can update medical histories they created" ON public.medical_histories FOR UPDATE USING (doctor_id = auth.uid());
-CREATE POLICY "System can delete medical histories" ON public.medical_histories FOR DELETE USING (false);
+
+-- App configs table policies
+CREATE POLICY "Admins can view app configs" ON public.app_configs FOR SELECT USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admins can create app configs" ON public.app_configs FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admins can update app configs" ON public.app_configs FOR UPDATE USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
+
+-- =============================================================================
+-- STEP 6: CREATE AUDIT LOGGING SYSTEM
+-- =============================================================================
+
+-- Create Audit Logging Function
+CREATE OR REPLACE FUNCTION public.log_changes()
+RETURNS TRIGGER AS $$
+DECLARE
+    user_id TEXT;
+    record_id UUID;
+BEGIN
+    -- Get the user ID from the JWT claims
+    user_id := current_setting('request.jwt.claim.sub', true);
+
+    -- If we can't get the user ID, use the current user
+    IF user_id IS NULL THEN
+        user_id := current_user;
+    END IF;
+
+    -- Get the record ID, handling different primary key column names
+    IF TG_OP = 'DELETE' THEN
+        -- For DELETE operations, only OLD is available
+        IF TG_TABLE_NAME IN ('user_profiles', 'doctor_profiles') THEN
+            record_id := OLD.user_id;
+        ELSE
+            record_id := OLD.id;
+        END IF;
+    ELSE
+        -- For INSERT/UPDATE operations, NEW is available
+        IF TG_TABLE_NAME IN ('user_profiles', 'doctor_profiles') THEN
+            record_id := NEW.user_id;
+        ELSE
+            record_id := NEW.id;
+        END IF;
+    END IF;
+
+    -- Insert the audit log entry
+    INSERT INTO public.audit_logs (table_name, operation, record_id, old_values, new_values, changed_by)
+    VALUES (
+        TG_TABLE_NAME,
+        TG_OP,
+        record_id,
+        CASE WHEN TG_OP IN ('UPDATE', 'DELETE') THEN row_to_json(OLD) ELSE NULL END,
+        CASE WHEN TG_OP IN ('INSERT', 'UPDATE') THEN row_to_json(NEW) ELSE NULL END,
+        user_id
+    );
+
+    -- Return the appropriate record
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create Audit Logs Table
+CREATE TABLE public.audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    table_name TEXT NOT NULL,
+    operation TEXT NOT NULL,
+    record_id UUID,
+    old_values JSONB,
+    new_values JSONB,
+    changed_by TEXT,
+    changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
 -- Create audit triggers for all tables
 CREATE TRIGGER users_audit_trigger AFTER INSERT OR UPDATE OR DELETE ON public.users FOR EACH ROW EXECUTE FUNCTION public.log_changes();
@@ -374,13 +453,22 @@ CREATE TRIGGER medications_audit_trigger AFTER INSERT OR UPDATE OR DELETE ON pub
 CREATE TRIGGER tokens_audit_trigger AFTER INSERT OR UPDATE OR DELETE ON public.tokens FOR EACH ROW EXECUTE FUNCTION public.log_changes();
 CREATE TRIGGER medical_histories_audit_trigger AFTER INSERT OR UPDATE OR DELETE ON public.medical_histories FOR EACH ROW EXECUTE FUNCTION public.log_changes();
 
--- Comments
+-- Enable RLS on audit logs table
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- Audit logs policies (admins only)
+CREATE POLICY "Admins can view audit logs" ON public.audit_logs FOR SELECT USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
+
+-- =============================================================================
+-- STEP 7: ADD COMPREHENSIVE TABLE COMMENTS
+-- =============================================================================
+
 COMMENT ON TABLE public.users IS 'User profiles and account information';
 COMMENT ON COLUMN public.users.id IS 'Unique identifier for the user';
 COMMENT ON COLUMN public.users.name IS 'User''s full name';
 COMMENT ON COLUMN public.users.email IS 'User''s email address (unique)';
 COMMENT ON COLUMN public.users.phone IS 'User''s phone number (unique)';
-COMMENT ON COLUMN public.users.role IS 'User role (user, doctor, admin)';
+COMMENT ON COLUMN public.users.role IS 'User role (user, doctor, admin, secretary)';
 COMMENT ON COLUMN public.users.is_email_verified IS 'Whether the user''s email has been verified';
 COMMENT ON COLUMN public.users.profile_picture IS 'URL to the user''s profile picture';
 COMMENT ON COLUMN public.users.is_status IS 'Current status of the user account';
@@ -414,15 +502,6 @@ COMMENT ON COLUMN public.doctor_profiles.working_hours IS 'Doctor''s working hou
 COMMENT ON COLUMN public.doctor_profiles.bio IS 'Doctor''s biography';
 COMMENT ON COLUMN public.doctor_profiles.is_listed IS 'Whether the doctor is listed in the directory';
 COMMENT ON COLUMN public.doctor_profiles.supported_languages IS 'Languages supported by the doctor';
-
-COMMENT ON TABLE public.app_configs IS 'Application configuration settings';
-COMMENT ON COLUMN public.app_configs.id IS 'Unique identifier for the config';
-COMMENT ON COLUMN public.app_configs.key IS 'Unique key for the configuration';
-COMMENT ON COLUMN public.app_configs.description IS 'Description of the configuration';
-COMMENT ON COLUMN public.app_configs.configs IS 'JSONB object containing configuration values';
-COMMENT ON COLUMN public.app_configs.creator IS 'User who created the configuration';
-COMMENT ON COLUMN public.app_configs.created_at IS 'Timestamp when the config was created';
-COMMENT ON COLUMN public.app_configs.updated_at IS 'Timestamp when the config was last updated';
 
 COMMENT ON TABLE public.appointments IS 'Patient appointment bookings';
 COMMENT ON COLUMN public.appointments.id IS 'Unique identifier for the appointment';
@@ -513,6 +592,15 @@ COMMENT ON COLUMN public.tokens.expires IS 'Expiration timestamp for the token';
 COMMENT ON COLUMN public.tokens.blacklisted IS 'Whether the token is blacklisted';
 COMMENT ON COLUMN public.tokens.created_at IS 'Timestamp when the token was created';
 
+COMMENT ON TABLE public.app_configs IS 'Application configuration settings';
+COMMENT ON COLUMN public.app_configs.id IS 'Unique identifier for the config';
+COMMENT ON COLUMN public.app_configs.key IS 'Unique key for the configuration';
+COMMENT ON COLUMN public.app_configs.description IS 'Description of the configuration';
+COMMENT ON COLUMN public.app_configs.configs IS 'JSONB object containing configuration values';
+COMMENT ON COLUMN public.app_configs.creator IS 'User who created the configuration';
+COMMENT ON COLUMN public.app_configs.created_at IS 'Timestamp when the config was created';
+COMMENT ON COLUMN public.app_configs.updated_at IS 'Timestamp when the config was last updated';
+
 COMMENT ON TABLE public.audit_logs IS 'Audit trail for database changes';
 COMMENT ON COLUMN public.audit_logs.id IS 'Unique identifier for the audit log entry';
 COMMENT ON COLUMN public.audit_logs.table_name IS 'Name of the table that was modified';
@@ -522,3 +610,56 @@ COMMENT ON COLUMN public.audit_logs.old_values IS 'JSON representation of the re
 COMMENT ON COLUMN public.audit_logs.new_values IS 'JSON representation of the record after modification';
 COMMENT ON COLUMN public.audit_logs.changed_by IS 'User who performed the modification';
 COMMENT ON COLUMN public.audit_logs.changed_at IS 'Timestamp when the modification occurred';
+
+-- =============================================================================
+-- STEP 8: DISPLAY COMPLETION SUMMARY
+-- =============================================================================
+
+SELECT '🎉 ULTIMATE DATABASE SCHEMA CREATED SUCCESSFULLY!' as status;
+
+-- Show comprehensive table summary
+SELECT
+    '📊 Database Summary:' as info,
+    COUNT(*) as total_tables
+FROM information_schema.tables
+WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
+
+-- List all created tables with details
+SELECT
+    '📋 Created Tables:' as section;
+
+SELECT
+    table_name as tables_created,
+    (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = t.table_name AND table_schema = 'public') as column_count
+FROM information_schema.tables t
+WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+ORDER BY table_name;
+
+-- Show ENUM types created
+SELECT
+    '🏷️ Created ENUM Types:' as section;
+
+SELECT
+    typname as enum_types
+FROM pg_type
+WHERE typnamespace = 'public'::regnamespace AND typtype = 'e'
+ORDER BY typname;
+
+-- Show policies created
+SELECT
+    '🔒 Created RLS Policies:' as section,
+    COUNT(*) as total_policies
+FROM pg_policy pol
+JOIN pg_class cls ON pol.polrelid = cls.oid
+JOIN pg_namespace nsp ON cls.relnamespace = nsp.oid
+WHERE nsp.nspname = 'public';
+
+-- Show indexes created
+SELECT
+    '⚡ Created Indexes:' as section,
+    COUNT(*) as total_indexes
+FROM pg_indexes
+WHERE schemaname = 'public';
+
+-- Final success message
+SELECT '✅ SOS Tourist Doctor database schema is ready for use!' as final_message;

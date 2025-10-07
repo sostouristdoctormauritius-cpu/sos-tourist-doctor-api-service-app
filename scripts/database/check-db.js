@@ -44,13 +44,35 @@ async function checkDatabase() {
       });
     }
 
-    // Check user_profiles table
-    const profilesResult = await client.query('SELECT COUNT(*) FROM user_profiles;');
-    console.log(`User profiles count: ${profilesResult.rows[0].count}`);
+    // Check if doctor_profiles table exists first
+    const doctorTableCheck = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'doctor_profiles'
+      );
+    `);
 
-    // Check doctor_profiles table
-    const doctorProfilesResult = await client.query('SELECT COUNT(*) FROM doctor_profiles;');
-    console.log(`Doctor profiles count: ${doctorProfilesResult.rows[0].count}`);
+    if (doctorTableCheck.rows[0].exists) {
+      const doctorProfilesResult = await client.query('SELECT COUNT(*) FROM doctor_profiles;');
+      console.log(`Doctor profiles count: ${doctorProfilesResult.rows[0].count}`);
+
+      // Show doctor profiles if they exist
+      if (doctorProfilesResult.rows[0].count > 0) {
+        const doctors = await client.query(`
+          SELECT dp.*, u.name, u.email
+          FROM doctor_profiles dp
+          JOIN users u ON dp.user_id = u.id
+          LIMIT 5;
+        `);
+        console.log('Sample doctors:');
+        doctors.rows.forEach(doctor => {
+          console.log(`- ${doctor.name} (${doctor.email}) - ${doctor.specialisation} - Listed: ${doctor.is_listed}`);
+        });
+      }
+    } else {
+      console.log('Doctor profiles table does not exist');
+    }
 
   } catch (err) {
     console.error('Database error:', err);

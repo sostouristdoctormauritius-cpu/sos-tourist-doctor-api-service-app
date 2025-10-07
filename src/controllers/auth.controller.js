@@ -81,85 +81,94 @@ const register = catchAsync(async (req, res) => {
 const authenticateUser = async (email, password, requiredRole = null) => {
   logger.info('Attempting Supabase authentication', { email });
 
-  // Use Supabase's native sign in method with email/password
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
+  try {
+    // Use Supabase's native sign in method with email/password
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
 
-  if (error) {
-    logger.error('Supabase authentication failed', { email, error: error.message, code: error.code });
-    throw new ApiError(status.UNAUTHORIZED, 'Incorrect email or password');
-  }
+    if (error) {
+      logger.error('Supabase authentication failed', { email, error: error.message, code: error.code });
+      throw new ApiError(status.UNAUTHORIZED, 'Incorrect email or password');
+    }
 
-  logger.info('Supabase authentication response', {
-    email,
-    hasData: !!data,
-    hasUser: !!(data && data.user),
-    userId: data && data.user ? data.user.id : null,
-    email: data && data.user ? data.user.email : null
-  });
+    logger.info('Supabase authentication response', {
+      email,
+      hasData: !!data,
+      hasUser: !!(data && data.user),
+      userId: data && data.user ? data.user.id : null,
+      email: data && data.user ? data.user.email : null
+    });
 
-  if (!data.user) {
-    logger.warn('Authentication successful but no user data returned', { email });
-    throw new ApiError(status.UNAUTHORIZED, 'Failed to authenticate user');
-  }
+    if (!data.user) {
+      logger.warn('Authentication successful but no user data returned', { email });
+      throw new ApiError(status.UNAUTHORIZED, 'Failed to authenticate user');
+    }
 
-  logger.info('Supabase authentication successful', { email, userId: data.user.id });
+    logger.info('Supabase authentication successful', { email, userId: data.user.id });
 
-  // Get user from our database
-  logger.info('Attempting to find user in local database', { email });
-  let user = await userService.getUserByEmail(email);
-  logger.info('User lookup result', { email, found: !!user, user: user ? { id: user.id, email: user.email, role: user.role, is_archived: user.is_archived } : null });
+    // Get user from our database
+    logger.info('Attempting to find user in local database', { email });
+    let user = await userService.getUserByEmail(email);
+    logger.info('User lookup result', { email, found: !!user, user: user ? { id: user.id, email: user.email, role: user.role, is_archived: user.is_archived } : null });
 
-  if (!user) {
-    logger.warn('User authenticated via Supabase but not found in local database', { email });
-    // Create user in local database if they exist in Supabase but not locally
-    const userPayload = {
-      id: data.user.id,
-      email: data.user.email,
-      name: data.user.user_metadata?.name || data.user.email.split('@')[0],
-      phone: data.user.user_metadata?.phone || null,
-      role: data.user.user_metadata?.role || 'user',
-      profile_picture: data.user.user_metadata?.profile_picture || null,
-      is_email_verified: data.user.email_confirmed_at ? true : false
-    };
+    if (!user) {
+      logger.warn('User authenticated via Supabase but not found in local database', { email });
+      // Create user in local database if they exist in Supabase but not locally
+      const userPayload = {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.user_metadata?.name || data.user.email.split('@')[0],
+        phone: data.user.user_metadata?.phone || null,
+        role: data.user.user_metadata?.role || 'user',
+        profile_picture: data.user.user_metadata?.profile_picture || null,
+        is_email_verified: data.user.email_confirmed_at ? true : false
+      };
 
-    logger.info('Attempting to create user in local database', { email, userPayload });
-    try {
-      user = await userService.createUser(userPayload);
-      logger.info('User created in local database', { userId: user.id, email });
-    } catch (creationError) {
-      logger.error('Failed to create user in local database', {
-        email,
-        error: creationError.message,
-        stack: creationError.stack,
-        userPayload,
-        detailedError: creationError
-      });
+      logger.info('Attempting to create user in local database', { email, userPayload });
+      try {
+        user = await userService.createUser(userPayload);
+        logger.info('User created in local database', { userId: user.id, email });
+      } catch (creationError) {
+        logger.error('Failed to create user in local database', {
+          email,
+          error: creationError.message,
+          stack: creationError.stack,
+          userPayload,
+          detailedError: creationError
+        });
 
-      // Provide more specific error messages based on the error type
-      if (creationError.code === '23505') { // Unique constraint violation
-        throw new ApiError(status.BAD_REQUEST, 'A user with this email already exists in the local database');
-      } else if (creationError.message.includes('connect')) {
-        throw new ApiError(status.INTERNAL_SERVER_ERROR, 'Database connection error - unable to create local user profile');
-      } else {
-        throw new ApiError(status.INTERNAL_SERVER_ERROR, 'Failed to create local user profile: ' + creationError.message);
+        // Provide more specific error messages based on the error type
+        if (creationError.code === '23505') { // Unique constraint violation
+          throw new ApiError(status.BAD_REQUEST, 'A user with this email already exists in the local database');
+        } else if (creationError.message.includes('connect')) {
+          throw new ApiError(status.INTERNAL_SERVER_ERROR, 'Database connection error - unable to create local user profile');
+        } else {
+          throw new ApiError(status.INTERNAL_SERVER_ERROR, 'Failed to create local user profile: ' + creationError.message);
+        }
       }
     }
+
+    if (requiredRole && user.role !== requiredRole) {
+      logger.warn('Unauthorized access attempt', { userId: user.id, role: user.role, requiredRole });
+      throw new ApiError(status.FORBIDDEN, 'You are not authorized to access this resource');
+    }
+
+    logger.info('User authenticated successfully', { userId: user.id, role: user.role });
+
+    // Generate JWT tokens
+    const tokens = await tokenService.generateAuthTokens(user);
+
+    return { user, tokens };
+  } catch (error) {
+    logger.error('Authentication process failed', {
+      email,
+      error: error.message,
+      stack: error.stack
+    });
+    throw error;
   }
-
-  if (requiredRole && user.role !== requiredRole) {
-    logger.warn('Unauthorized access attempt', { userId: user.id, role: user.role, requiredRole });
-    throw new ApiError(status.FORBIDDEN, 'You are not authorized to access this resource');
-  }
-
-  logger.info('User authenticated successfully', { userId: user.id, role: user.role });
-
-  // Generate JWT tokens
-  const tokens = await tokenService.generateAuthTokens(user);
-
-  return { user, tokens };
 };
 
 const login = catchAsync(async (req, res) => {
@@ -180,15 +189,23 @@ const loginAdmin = catchAsync(async (req, res) => {
   logger.info('Login admin request received', { email: req.body.email });
   const { email, password } = req.body;
 
-  const { user, tokens } = await authenticateUser(email, password, 'admin');
-
-  logger.info('Admin login successful', { userId: user.id, role: user.role });
-
-  res.status(status.OK).send({
-    user,
-    tokens,
-    message: 'Admin login successful'
-  });
+  try {
+    const { user, tokens } = await authenticateUser(email, password, 'admin');
+    logger.info('Admin login successful', { userId: user.id, role: user.role });
+    
+    res.status(status.OK).send({
+      user,
+      tokens,
+      message: 'Admin login successful'
+    });
+  } catch (error) {
+    logger.error('Admin login failed', {
+      email: req.body.email,
+      error: error.message,
+      stack: error.stack
+    });
+    throw error;
+  }
 });
 
 // Forgot password implementation

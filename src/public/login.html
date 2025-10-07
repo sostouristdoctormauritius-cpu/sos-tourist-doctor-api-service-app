@@ -210,7 +210,7 @@
             loadingDiv.style.display = 'block';
             
             try {
-                const response = await fetch('/v1/login-admin', {
+                const response = await fetch('/api/v1/auth/admin/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

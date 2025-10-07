@@ -13,14 +13,25 @@ class RealtimeService {
 
   async initialize() {
     this.setupEventHandlers();
-    this.setupDatabaseSubscriptions();
-    logger.info('Real-time service initialized');
+    try {
+      this.setupDatabaseSubscriptions();
+      logger.info('Real-time service initialized');
+    } catch (error) {
+      logger.error('Failed to initialize real-time service:', error.message);
+      // Continue without real-time subscriptions
+    }
   }
 
   /**
    * Set up real-time database subscriptions
    */
   setupDatabaseSubscriptions() {
+    // Check if dbManager has subscribeToTable method
+    if (typeof dbManager.subscribeToTable !== 'function') {
+      logger.warn('dbManager does not support real-time subscriptions, skipping setup');
+      return;
+    }
+
     // Subscribe to appointment changes
     const appointmentSubscription = dbManager.subscribeToTable('appointments', this.handleAppointmentChange.bind(this), 'realtime:appointments');
 
@@ -138,11 +149,6 @@ class RealtimeService {
       logger.info('Availability updated:', data);
       // Broadcast to all connected clients
       socketService.broadcastToAll('availabilityUpdated', data);
-
-      // Also send to the specific doctor if we have their ID
-      if (data.availability && data.availability.user) {
-        socketService.broadcastToUser(data.availability.user, 'doctorAvailabilityUpdated', data);
-      }
     });
 
     // Handle availability deletion
@@ -151,92 +157,44 @@ class RealtimeService {
       // Broadcast to all connected clients
       socketService.broadcastToAll('availabilityDeleted', data);
     });
-  }
 
-  /**
-   * Subscribe to real-time changes on a table
-   * @param {string} table - The table to subscribe to
-   * @param {Function} callback - The callback function to handle changes
-   * @param {string} subscriptionName - The name for this subscription
-   * @returns {Object} The subscription object
-   */
-  subscribeToTable(table, callback, subscriptionName) {
-    try {
-      const subscription = dbManager.subscribeToTable(table, callback, subscriptionName);
+    // Handle doctor availability updates
+    this.registerEventHandler('doctorAvailabilityUpdated', (data) => {
+      logger.info('Doctor availability updated:', data);
+      // Broadcast to all connected clients
+      socketService.broadcastToAll('doctorAvailabilityUpdated', data);
+    });
 
-      if (subscription) {
-        this.subscriptions.set(subscriptionName, subscription);
-        logger.info(`Subscribed to table ${table} with name ${subscriptionName}`);
+    // Handle SMS received
+    this.registerEventHandler('smsReceived', (data) => {
+      logger.info('SMS received:', data);
+      // Broadcast to all connected clients
+      socketService.broadcastToAll('smsReceived', data);
+    });
+
+    // Handle OTP requested
+    this.registerEventHandler('otpRequested', (data) => {
+      logger.info('OTP requested:', data);
+      // Send to the specific user
+      if (data.userId) {
+        socketService.broadcastToUser(data.userId, 'otpRequested', data);
       }
+    });
 
-      return subscription;
-    } catch (error) {
-      logger.error(`Error subscribing to table ${table}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Subscribe to real-time changes with filters
-   * @param {string} table - The table to subscribe to
-   * @param {Object} filter - The filter object
-   * @param {Function} callback - The callback function to handle changes
-   * @param {string} subscriptionName - The name for this subscription
-   * @returns {Object} The subscription object
-   */
-  subscribeToTableWithFilter(table, filter, callback, subscriptionName) {
-    try {
-      const subscription = dbManager.subscribeToTableWithFilter(table, filter, callback, subscriptionName);
-
-      if (subscription) {
-        this.subscriptions.set(subscriptionName, subscription);
-        logger.info(`Subscribed to table ${table} with filter and name ${subscriptionName}`);
+    // Handle OTP verified
+    this.registerEventHandler('otpVerified', (data) => {
+      logger.info('OTP verified:', data);
+      // Send to the specific user
+      if (data.userId) {
+        socketService.broadcastToUser(data.userId, 'otpVerified', data);
       }
-
-      return subscription;
-    } catch (error) {
-      logger.error(`Error subscribing to table ${table} with filter:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Unsubscribe from a specific subscription
-   * @param {string} subscriptionName - The name of the subscription to unsubscribe from
-   */
-  async unsubscribe(subscriptionName) {
-    try {
-      const subscription = this.subscriptions.get(subscriptionName);
-      if (subscription) {
-        await dbManager.unsubscribeFromChannel(subscriptionName);
-        this.subscriptions.delete(subscriptionName);
-        logger.info(`Unsubscribed from ${subscriptionName}`);
-      }
-    } catch (error) {
-      logger.error(`Error unsubscribing from ${subscriptionName}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Unsubscribe from all subscriptions
-   */
-  async unsubscribeAll() {
-    try {
-      for (const [subscriptionName] of this.subscriptions) {
-        await this.unsubscribe(subscriptionName);
-      }
-      logger.info('Unsubscribed from all real-time subscriptions');
-    } catch (error) {
-      logger.error('Error unsubscribing from all subscriptions:', error);
-      throw error;
-    }
+    });
   }
 
   /**
    * Emit an event to all registered handlers
-   * @param {string} eventName - The name of the event
-   * @param {Object} data - The event data
+   * @param {string} eventName - The name of the event to emit
+   * @param {Object} data - The data to pass to the event handlers
    */
   emitEvent(eventName, data) {
     const handlers = this.eventHandlers.get(eventName);

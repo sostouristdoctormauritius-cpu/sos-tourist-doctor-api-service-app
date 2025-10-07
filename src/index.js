@@ -1,20 +1,7 @@
 const dotenv = require('dotenv');
 const config = require('./config/config');
 const dbManager = require('./db/dbManager');
-const http = require('http');
 const app = require('./app');
-
-const port = process.env.PORT || 3000;
-
-// Create HTTP server
-const server = http.createServer(app);
-
-// Listen on provided port
-server.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
-
-module.exports = server;
 
 const logger = require('./config/logger');
 const socketService = require('./services/socket.service');

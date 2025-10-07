@@ -221,13 +221,9 @@
                     })
                 });
                 
-                loadingDiv.style.display = 'none';
-                
-                if (response.redirected) {
-                    window.location.href = response.url;
-                } else if (response.ok) {
+                if (response.ok) {
                     const data = await response.json();
-                    // Store tokens in localStorage or handle as needed
+                    // Store tokens in localStorage
                     localStorage.setItem('accessToken', data.tokens.access.token);
                     localStorage.setItem('refreshToken', data.tokens.refresh.token);
                     window.location.href = '/v1/dashboard';

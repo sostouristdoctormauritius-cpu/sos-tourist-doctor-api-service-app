@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 
-// Hash from the database for admin user
-const storedHash = '$2a$08$9Qz3lK1p/a0dhrxiowP.dnkgNORTWgdEDHn5L2/xjpEWuC.QQv4rKO9jO';
+// Hash from the database for admin user (updated)
+const storedHash = '$2a$08$/DqZwBeu2ap.q8xlg8iIguIcLbXauM/zSJU9pkddqDyDOxVUanO6.';
 
 // Test passwords
 const testPasswords = ['Admin123!', 'Password123', 'password', 'admin'];

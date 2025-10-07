@@ -27,6 +27,11 @@ app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/login.html'));
 });
 
+// Middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser(config.jwt.secret));
+
 // API Routes - Load with error handling
 try {
   const healthRoute = require('./routes/v1/health.route');
@@ -46,15 +51,8 @@ try {
   console.error('Stack:', error.stack);
 }
 
-// Middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser(config.jwt.secret));
-
-// Static file serving
+// Static file serving (after API routes)
 app.use(express.static(path.join(__dirname, '../public')));
-
-// API Routes (loaded above with error handling)
 
 // Load auth middleware with error handling
 let auth;

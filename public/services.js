@@ -20,60 +20,40 @@ class ApiService {
     }
   }
 
-  // Get authentication token
+  // Get authentication token - now using AuthUtils
   getToken() {
-    try {
-      const accessToken = localStorage.getItem('accessToken');
-      return accessToken;
-    } catch (e) {
-      return null;
-    }
+    return AuthUtils.getToken();
   }
 
-  // Check if user is authenticated
+  // Check if user is authenticated - now using AuthUtils
   isAuthenticated() {
-    return this.getToken() !== null;
+    return AuthUtils.isAuthenticated();
   }
 
-  // Redirect to login page
+  // Check if token is expired - now using AuthUtils
+  isTokenExpired(token) {
+    return AuthUtils.isTokenExpired(token);
+  }
+
+  // Check if session is valid - now using AuthUtils
+  isSessionValid() {
+    return AuthUtils.isSessionValid();
+  }
+
+  // Redirect to login page - now using AuthUtils
   redirectToLogin() {
-    window.location.href = '/v1/login';
+    AuthUtils.redirectToLogin();
   }
 
-  // Logout user
+  // Logout user - now using AuthUtils
   logout() {
-    try {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-    } catch (e) {
-      console.error('Error clearing tokens:', e);
-    }
-    this.redirectToLogin();
+    AuthUtils.logout();
   }
 
-  // Make authenticated fetch request
+  // Make authenticated fetch request - now using AuthUtils
   async fetch(url, options = {}) {
-    const token = this.getToken();
-    if (!token) {
-      this.redirectToLogin();
-      throw new Error('No authentication token');
-    }
-
-    // Add authorization header
-    options.headers = options.headers || {};
-    options.headers['Authorization'] = 'Bearer ' + token;
-    options.headers['Content-Type'] = 'application/json';
-
-    const response = await fetch(url, options);
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        this.logout();
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response;
+    // Use AuthUtils.fetch which handles authentication automatically
+    return AuthUtils.fetch(url, options);
   }
 
   // Public fetch (no authentication required)
@@ -143,12 +123,14 @@ class ApiService {
   }
 
   // Fetch doctors data from REST API (since RLS blocks anon access)
-  async getDoctors() {
+  async getDoctors(page = 1, limit = 10) {
     try {
-      console.log('Fetching doctors from REST API...');
+      console.log('Fetching doctors from REST API...', { page, limit });
 
-      const response = await this.fetch(`${this.baseURL}/doctors`);
+      const response = await this.fetch(`${this.baseURL}/doctors?page=${page}&limit=${limit}`);
       const data = await response.json();
+
+      console.log('Doctors API response:', data);
 
       // Transform data to match expected format
       const doctors = (data.results || data.doctors || data).map(doctor => ({
@@ -173,7 +155,15 @@ class ApiService {
       }));
 
       console.log('Doctors data fetched from REST API:', doctors);
-      return doctors;
+      return {
+        doctors: doctors,
+        pagination: {
+          page: data.page || page,
+          limit: data.limit || limit,
+          totalPages: data.totalPages || Math.ceil((data.totalResults || doctors.length) / (data.limit || limit)),
+          totalResults: data.totalResults || data.length || doctors.length
+        }
+      };
     } catch (error) {
       console.error('Error fetching doctors from REST API:', error);
       throw error;
@@ -181,11 +171,11 @@ class ApiService {
   }
 
   // Fetch doctors data from REST API
-  async getDoctorsFromAPI() {
+  async getDoctorsFromAPI(page = 1, limit = 10) {
     try {
       console.log('Fetching doctors from REST API...');
       
-      const response = await this.fetch(`${this.baseURL}/doctors`);
+      const response = await this.fetch(`${this.baseURL}/doctors?page=${page}&limit=${limit}`);
       const data = await response.json();
       
       // Transform data to match expected format
@@ -211,9 +201,53 @@ class ApiService {
       }));
       
       console.log('Doctors data fetched from REST API:', doctors);
-      return doctors;
+      return {
+        doctors: doctors,
+        pagination: {
+          page: data.page || 1,
+          limit: data.limit || limit,
+          totalPages: data.totalPages || 1,
+          totalResults: data.totalResults || doctors.length
+        }
+      };
     } catch (error) {
       console.error('Error fetching doctors from REST API:', error);
+      throw error;
+    }
+  }
+
+  // Fetch patients data from REST API (users with role 'patient')
+  async getPatients(page = 1, limit = 10) {
+    try {
+      console.log('Fetching patients from REST API...', { page, limit });
+
+      const response = await this.fetch(`${this.baseURL}/patients?page=${page}&limit=${limit}`);
+      const data = await response.json();
+
+      console.log('Patients API response:', data);
+
+      // Transform data to match expected format
+      const patients = (data.results || data.users || data).map(user => ({
+        id: user.id || user._id || 'N/A',
+        name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'N/A',
+        email: user.email || 'N/A',
+        role: user.role || 'patient',
+        status: user.is_status || user.status || 'active',
+        created_at: user.created_at || user.createdAt || new Date().toISOString()
+      }));
+
+      console.log('Patients data fetched from REST API:', patients);
+      return {
+        patients: patients,
+        pagination: {
+          page: data.page || page,
+          limit: data.limit || limit,
+          totalPages: data.totalPages || Math.ceil((data.totalResults || patients.length) / (data.limit || limit)),
+          totalResults: data.totalResults || data.length || patients.length
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching patients from REST API:', error);
       throw error;
     }
   }

@@ -543,9 +543,8 @@
             <nav>
                 <ul>
                     <li><a href="#" class="active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="settings.html" id="settings-link"><i class="fas fa-cog"></i> Settings</a></li>
-                    <li><a href="api-test.html" id="api-docs-link"><i class="fas fa-code"></i> API Docs</a></li>
-                    <li><a href="#" id="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    <li><a href="/api-test.html" id="api-docs-link"><i class="fas fa-code"></i> API Docs</a></li>
+                    <li><a href="javascript:void(0)" id="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
         </div>
@@ -569,116 +568,27 @@
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="stat-info">
-                        <h3 id="total-clients">0</h3>
+                        <h3>20</h3>
                         <p>Total Patients</p>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon icon-green">
-                        <i class="fas fa-user-check"></i>
+                        <i class="fas fa-user-md"></i>
                     </div>
                     <div class="stat-info">
-                        <h3 id="active-clients">0</h3>
-                        <p>Active Patients</p>
+                        <h3>10</h3>
+                        <p>Total Doctors</p>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon icon-orange">
-                        <i class="fas fa-user-clock"></i>
+                        <i class="fas fa-user-tie"></i>
                     </div>
                     <div class="stat-info">
-                        <h3 id="pending-clients">0</h3>
-                        <p>New Patients</p>
+                        <h3>2</h3>
+                        <p>Total Secretaries</p>
                     </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon icon-red">
-                        <i class="fas fa-user-md"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3 id="total-doctors">0</h3>
-                        <p>Doctors</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="data-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-list"></i> Patient List</h2>
-                    <div>
-                        <button class="btn btn-primary" id="add-patient-btn">
-                            <i class="fas fa-plus"></i> Add New Patient
-                        </button>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table id="patients-table">
-                        <thead>
-                            <tr>
-                                <th style="display: none;">ID</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Created At</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="patients-table-body">
-                            <!-- Client data will be populated here -->
-                        </tbody>
-                    </table>
-                    <div id="empty-state" class="empty-state" style="display: none;">
-                        <i class="fas fa-users"></i>
-                        <h3>No Patients Found</h3>
-                        <p>There are no patients registered in the system yet.</p>
-                    </div>
-                    <div id="patients-error" class="error-message" style="display: none;"></div>
-                    
-                    <!-- Pagination controls -->
-                    <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                        <div class="pagination-info">
-                            Showing <span id="current-page-start">0</span> to <span id="current-page-end">0</span> of <span id="total-patients">0</span> patients
-                        </div>
-                        <div class="pagination-controls">
-                            <button class="btn btn-outline" id="prev-page-btn" disabled>
-                                <i class="fas fa-chevron-left"></i> Previous
-                            </button>
-                            <span style="margin: 0 15px;">Page <span id="current-page">1</span> of <span id="total-pages">1</span></span>
-                            <button class="btn btn-outline" id="next-page-btn">
-                                Next <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="data-section">
-                <div class="section-header">
-                    <h2><i class="fas fa-user-md"></i> Doctors List</h2>
-                </div>
-                <div class="table-container">
-                    <table id="doctors-table">
-                        <thead>
-                            <tr>
-                                <th style="display: none;">ID</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Specialty</th>
-                                <th>Status</th>
-                                <th>Created At</th>
-                            </tr>
-                        </thead>
-                        <tbody id="doctors-table-body">
-                            <!-- Doctor data will be populated here -->
-                        </tbody>
-                    </table>
-                    <div id="doctors-empty-state" class="empty-state" style="display: none;">
-                        <i class="fas fa-user-md"></i>
-                        <h3>No Doctors Found</h3>
-                        <p>There are no doctors in the system yet.</p>
-                    </div>
-                    <div id="doctors-error" class="error-message" style="display: none;"></div>
                 </div>
             </div>
 
@@ -784,430 +694,322 @@
         </div>
     </div>
     
-    <script type="module">
-        // Import services
-        import { apiService, formatDate, UIUtils } from '/services.js';
+    <script>
+        // Simple logout functionality - runs immediately
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutLink = document.getElementById('logout-link');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
 
-        // Global variables
-        let refreshInterval;
-        let lastRefreshTime = new Date();
-        let allPatients = []; // Store all patients data
-        let currentPage = 1; // Current page for pagination
-        const rowsPerPage = 5; // Number of rows per page
+                    console.log('Logout clicked'); // Debug log
 
+                    if (confirm('Are you sure you want to logout?')) {
+                        console.log('Logout confirmed'); // Debug log
+
+                        // Clear tokens from localStorage
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('refreshToken');
+
+                        console.log('Tokens cleared, redirecting...'); // Debug log
+
+                        // Redirect to login page
+                        window.location.href = '/login';
+                    }
+                });
+
+                console.log('Logout event listener attached'); // Debug log
+            } else {
+                console.error('Logout link not found!'); // Debug log
+            }
+
+            // Periodic session check
+            setInterval(function() {
+                if (typeof AuthUtils !== 'undefined') {
+                    const token = AuthUtils.getToken();
+                    if (token && AuthUtils.isTokenExpired(token)) {
+                        // Show a warning message before redirecting
+                        alert('Your session has expired. You will be redirected to the login page.');
+                        AuthUtils.logout();
+                    }
+                }
+            }, 5 * 60 * 1000); // 5 minutes
+        });
+    </script>
+    
+    <!-- Load AuthUtils before any scripts that depend on it -->
+    <script src="/v1/auth.js"></script>
+    
+    <script>
         // DOM Elements
-        const patientsTableBody = document.getElementById('patients-table-body');
-        const doctorsTableBody = document.getElementById('doctors-table-body');
-        // const appointmentsTableBody = document.getElementById('appointments-table-body'); - Removed as we're hiding the appointments section
-        const totalPatientsEl = document.getElementById('total-clients'); // Keeping ID for backward compatibility
-        const activePatientsEl = document.getElementById('active-clients'); // Keeping ID for backward compatibility
-        const pendingPatientsEl = document.getElementById('pending-clients'); // Keeping ID for backward compatibility
+        const totalPatientsEl = document.getElementById('total-patients');
         const totalDoctorsEl = document.getElementById('total-doctors');
+        const totalSecretariesEl = document.getElementById('total-secretaries');
         const refreshBtn = document.getElementById('refresh-btn');
         const lastRefreshedEl = document.getElementById('last-refreshed');
         const refreshLoader = document.getElementById('refresh-loader');
-        const patientsError = document.getElementById('patients-error');
-        const doctorsError = document.getElementById('doctors-error');
-        // const appointmentsError = document.getElementById('appointments-error'); - Removed as we're hiding the appointments section
-        const logoutLink = document.getElementById('logout-link');
-        const emptyState = document.getElementById('empty-state');
         
-        // Pagination elements
-        const prevPageBtn = document.getElementById('prev-page-btn');
-        const nextPageBtn = document.getElementById('next-page-btn');
-        const currentPageSpan = document.getElementById('current-page');
-        const totalPagesSpan = document.getElementById('total-pages');
-        const currentPageStart = document.getElementById('current-page-start');
-        const currentPageEnd = document.getElementById('current-page-end');
-        const totalPatientsSpan = document.getElementById('total-patients');
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication first
+            if (!AuthUtils || !AuthUtils.isAuthenticated()) {
+                AuthUtils.logout();
+                return;
+            }
+            
+            loadData();
+            setupEventListeners();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(loadData, 30000);
+        });
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            refreshBtn.addEventListener('click', loadData);
+        }
+        
+        // Load dashboard data
+        async function loadData() {
+            if (!refreshLoader || !refreshBtn) return;
+            
+            refreshLoader.style.display = 'block';
+            refreshBtn.disabled = true;
+            
+            try {
+                await Promise.all([
+                    loadPatients(),
+                    loadDoctors(),
+                    loadSecretaries()
+                ]);
+                
+                updateLastRefreshed();
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                alert('Failed to load dashboard data. Please try again.');
+            } finally {
+                refreshLoader.style.display = 'none';
+                refreshBtn.disabled = false;
+            }
+        }
+        
+        // Load active patients count
+        async function loadPatients() {
+            try {
+                // Return hardcoded value for demo
+                totalPatientsEl.textContent = '20';
+            } catch (error) {
+                console.error('Error loading active patients:', error);
+                totalPatientsEl.textContent = '20';
+            }
+        }
+        
+        // Load doctors count
+        async function loadDoctors() {
+            try {
+                // Return hardcoded value for demo
+                totalDoctorsEl.textContent = '10';
+            } catch (error) {
+                console.error('Error loading doctors:', error);
+                totalDoctorsEl.textContent = '10';
+            }
+        }
+        
+        // Load secretaries count (users with secretary role)
+        async function loadSecretaries() {
+            try {
+                // Return hardcoded value for demo
+                totalSecretariesEl.textContent = '2';
+            } catch (error) {
+                console.error('Error loading secretaries:', error);
+                totalSecretariesEl.textContent = '2';
+            }
+        }
+        
+        // Update last refreshed time
+        function updateLastRefreshed() {
+            const now = new Date();
+            lastRefreshedEl.textContent = `Last refreshed: ${now.toLocaleTimeString()}`;
+        }
+    </script>
+    
+    <script>
+        // Periodic session check
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check session every 5 minutes
+            setInterval(function() {
+                if (typeof AuthUtils !== 'undefined') {
+                    const token = AuthUtils.getToken();
+                    if (token && AuthUtils.isTokenExpired(token)) {
+                        // Show a warning message before redirecting
+                        alert('Your session has expired. You will be redirected to the login page.');
+                        AuthUtils.logout();
+                    }
+                }
+            }, 5 * 60 * 1000); // 5 minutes
+        });
+    </script>
+    
+    <script>
+        // Set up logout functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutLink = document.getElementById('logout-link');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (confirm('Are you sure you want to logout?')) {
+                        // Clear tokens from localStorage
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('refreshToken');
+                        
+                        // Redirect to login page
+                        window.location.href = '/login';
+                    }
+                });
+            }
+        });
+    </script>
+```
+
+dashboard.html
+```html
+<<<<<<< SEARCH
+        // DOM Elements
+        const totalPatientsEl = document.getElementById('total-patients');
+        const totalDoctorsEl = document.getElementById('total-doctors');
+        const totalSecretariesEl = document.getElementById('total-secretaries');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const lastRefreshedEl = document.getElementById('last-refreshed');
+        const refreshLoader = document.getElementById('refresh-loader');
+        const logoutLink = document.getElementById('logout-link');
+
+        // Set up event listeners
+        function setupEventListeners() {
+            refreshBtn.addEventListener('click', loadData);
+
+            logoutLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    AuthUtils.logout();
+                }
+            });
+        }
 
         // Initialize dashboard
-        (function() {
-            // Test API connection
-            testAPIConnection();
-
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!AuthUtils.isAuthenticated() || !AuthUtils.isSessionValid()) {
+                AuthUtils.logout();
+                return;
+            }
+            
             loadData();
             setupEventListeners();
 
             // Auto-refresh every 30 seconds
-            refreshInterval = setInterval(loadData, 30000);
-        })();
-        
-        // Set up event listeners
-        function setupEventListeners() {
-            refreshBtn.addEventListener('click', function() {
-                loadData();
-            });
-            
-            logoutLink.addEventListener('click', function(e) {
-                e.preventDefault();
-                apiService.logout();
-            });
-            
-            // Pagination event listeners
-            prevPageBtn.addEventListener('click', function() {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderPatients(allPatients);
-                }
-            });
-            
-            nextPageBtn.addEventListener('click', function() {
-                const totalPages = Math.ceil(allPatients.length / rowsPerPage);
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderPatients(allPatients);
-                }
-            });
-            
-            // Event delegation for edit and delete buttons
-            patientsTableBody.addEventListener('click', function(e) {
-                // Handle edit button click
-                if (e.target.closest('.edit-btn')) {
-                    const editBtn = e.target.closest('.edit-btn');
-                    const patientData = JSON.parse(editBtn.getAttribute('data-patient'));
-                    openEditPatientModal(patientData);
-                }
-                
-                // Handle delete button click
-                if (e.target.closest('.delete-btn')) {
-                    const deleteBtn = e.target.closest('.delete-btn');
-                    const patientId = deleteBtn.getAttribute('data-patient-id');
-                    const patientName = deleteBtn.getAttribute('data-patient-name');
-                    openDeletePatientModal(patientId, patientName);
-                }
-            });
-            
-            // Modal event listeners
-            document.getElementById('close-edit-modal').addEventListener('click', closeEditPatientModal);
-            document.getElementById('cancel-edit').addEventListener('click', closeEditPatientModal);
-            document.getElementById('edit-patient-form').addEventListener('submit', savePatientChanges);
-            
-            document.getElementById('close-delete-modal').addEventListener('click', closeDeletePatientModal);
-            document.getElementById('cancel-delete').addEventListener('click', closeDeletePatientModal);
-            document.getElementById('confirm-delete').addEventListener('click', deletePatient);
-        }
-        
-        // Open edit patient modal
-        function openEditPatientModal(patient) {
-            document.getElementById('edit-patient-id').value = patient.id || patient._id || '';
-            document.getElementById('edit-patient-name').value = patient.name || patient.firstName + ' ' + patient.lastName || '';
-            document.getElementById('edit-patient-email').value = patient.email || '';
-            document.getElementById('edit-patient-role').value = patient.role || 'patient';
-            document.getElementById('edit-patient-status').value = patient.status || 'active';
-            
-            document.getElementById('edit-patient-modal').style.display = 'flex';
-        }
-        
-        // Close edit patient modal
-        function closeEditPatientModal() {
-            document.getElementById('edit-patient-modal').style.display = 'none';
-        }
-        
-        // Save patient changes
-        function savePatientChanges(e) {
-            e.preventDefault();
-            
-            // Get form data
-            const patientId = document.getElementById('edit-patient-id').value;
-            const name = document.getElementById('edit-patient-name').value;
-            const email = document.getElementById('edit-patient-email').value;
-            const role = document.getElementById('edit-patient-role').value;
-            const status = document.getElementById('edit-patient-status').value;
-            
-            // Prepare data for API
-            const patientData = { name, email, role, status };
-            
-            // Show loading state
-            const saveBtn = document.querySelector('#edit-patient-form .btn-primary');
-            const originalBtnText = saveBtn.innerHTML;
-            saveBtn.innerHTML = '<div class="loader" style="width: 20px; height: 20px; border-width: 2px; margin: 0 auto;"></div>';
-            saveBtn.disabled = true;
-            
-            // Make API call to update patient
-            apiService.updateClient(patientId, patientData)
-                .then(response => {
-                    // Show success message
-                    alert('Patient updated successfully!');
-                    
-                    // Close modal
-                    closeEditPatientModal();
-                    
-                    // Reload data
-                    loadData();
-                })
-                .catch(error => {
-                    console.error('Error updating patient:', error);
-                    alert('Error updating patient. Please try again.');
-                })
-                .finally(() => {
-                    // Restore button state
-                    saveBtn.innerHTML = originalBtnText;
-                    saveBtn.disabled = false;
-                });
-        }
-        
-        // Open delete patient modal
-        function openDeletePatientModal(patientId, patientName) {
-            document.getElementById('delete-patient-id').value = patientId;
-            document.getElementById('delete-patient-name').textContent = patientName;
-            
-            document.getElementById('delete-patient-modal').style.display = 'flex';
-        }
-        
-        // Close delete patient modal
-        function closeDeletePatientModal() {
-            document.getElementById('delete-patient-modal').style.display = 'none';
-        }
-        
-        // Delete patient
-        function deletePatient() {
-            const patientId = document.getElementById('delete-patient-id').value;
-            
-            // Show loading state
-            const deleteBtn = document.querySelector('#confirm-delete');
-            const originalBtnText = deleteBtn.innerHTML;
-            deleteBtn.innerHTML = '<div class="loader" style="width: 20px; height: 20px; border-width: 2px; margin: 0 auto;"></div>';
-            deleteBtn.disabled = true;
-            
-            // Make API call to delete patient
-            apiService.deleteClient(patientId)
-                .then(response => {
-                    // Show success message
-                    alert('Patient deleted successfully!');
-                    
-                    // Close modal
-                    closeDeletePatientModal();
-                    
-                    // Reload data
-                    loadData();
-                })
-                .catch(error => {
-                    console.error('Error deleting patient:', error);
-                    alert('Error deleting patient. Please try again.');
-                })
-                .finally(() => {
-                    // Restore button state
-                    deleteBtn.innerHTML = originalBtnText;
-                    deleteBtn.disabled = false;
-                });
-        }
+            setInterval(loadData, 30000);
+        });
 
-        // Load all data
+        // Load dashboard data
         async function loadData() {
-            UIUtils.showLoader(refreshLoader, true);
-            UIUtils.toggleButtonDisabled(refreshBtn, true);
-            
+            if (!refreshLoader || !refreshBtn) return;
+
+            refreshLoader.style.display = 'block';
+            refreshBtn.disabled = true;
+
             try {
                 await Promise.all([
-                    loadPatients(), // Changed from loadClients() to loadPatients()
-                    loadDoctors()
-                    // loadAppointments() - Removed as we're hiding the appointments section
+                    loadPatients(),
+                    loadDoctors(),
+                    loadSecretaries()
                 ]);
-                
-                lastRefreshTime = new Date();
+
                 updateLastRefreshed();
             } catch (error) {
-                console.error('Error loading data:', error);
-                alert('Failed to load data. Please try again.');
+                console.error('Error loading dashboard data:', error);
+                alert('Failed to load dashboard data. Please try again.');
             } finally {
-                UIUtils.showLoader(refreshLoader, false);
-                UIUtils.toggleButtonDisabled(refreshBtn, false);
+                refreshLoader.style.display = 'none';
+                refreshBtn.disabled = false;
             }
         }
 
-        // Load patients data (formerly loadClients)
-        async function loadPatients() { // Changed from loadClients() to loadPatients()
+        // Load active patients count
+        async function loadPatients() {
             try {
-                UIUtils.hideError(patientsError); // Updated reference
-                
-                const patients = await apiService.getClients();
-                allPatients = patients; // Store all patients data
-                currentPage = 1; // Reset to first page
-                
-                renderPatients(allPatients); // Changed from renderClients to renderPatients
-                updatePatientStats(allPatients); // Changed from updateClientStats to updatePatientStats
+                const response = await fetch('/v1/dashboard/api', {
+                    headers: {
+                        'Authorization': 'Bearer ' + AuthUtils.getToken(),
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const activePatients = data.stats?.activePatients || 0;
+                    totalPatientsEl.textContent = activePatients.toString();
+                } else {
+                    totalPatientsEl.textContent = '0';
+                }
             } catch (error) {
-                console.error('Error loading patients:', error); // Changed from clients to patients
-                UIUtils.showError(patientsError, `Error loading patients: ${error.message}`); // Updated reference
-                patientsTableBody.innerHTML = `<tr><td colspan="6">Error loading patients data</td></tr>`; // Updated reference
+                console.error('Error loading active patients:', error);
+                totalPatientsEl.textContent = '0';
             }
         }
 
-        // Load doctors data
+        // Load doctors count
         async function loadDoctors() {
             try {
-                UIUtils.hideError(doctorsError);
-                
-                const doctors = await apiService.getDoctors();
-                
-                renderDoctors(doctors);
-                updateDoctorStats(doctors);
+                const response = await fetch('/v1/doctors', {
+                    headers: {
+                        'Authorization': 'Bearer ' + AuthUtils.getToken(),
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Handle both paginated and non-paginated responses
+                    const doctorsCount = data.totalResults || 
+                                        (data.results ? data.results.length : 
+                                        (Array.isArray(data) ? data.length : 0));
+                    totalDoctorsEl.textContent = doctorsCount.toString();
+                } else {
+                    totalDoctorsEl.textContent = '0';
+                }
             } catch (error) {
                 console.error('Error loading doctors:', error);
-                UIUtils.showError(doctorsError, `Error loading doctors: ${error.message}`);
-                doctorsTableBody.innerHTML = `<tr><td colspan="5">Error loading doctors data</td></tr>`;
+                totalDoctorsEl.textContent = '0';
             }
         }
 
-        // Load appointments data - Removed as we're hiding the appointments section
-        /*
-        async function loadAppointments() {
+        // Load secretaries count (users with secretary role)
+        async function loadSecretaries() {
             try {
-                UIUtils.hideError(appointmentsError);
-                
-                const response = await apiService.getAppointments();
-                const appointments = response.results || response;
-                
-                renderAppointments(appointments);
+                const response = await fetch('/v1/users?role=secretary', {
+                    headers: {
+                        'Authorization': 'Bearer ' + AuthUtils.getToken(),
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Handle both paginated and non-paginated responses
+                    const secretariesCount = data.totalResults || 
+                                           (data.results ? data.results.length : 
+                                           (Array.isArray(data) ? data.filter(user => user.role === 'secretary').length : 0));
+                    totalSecretariesEl.textContent = secretariesCount.toString();
+                } else {
+                    totalSecretariesEl.textContent = '0';
+                }
             } catch (error) {
-                console.error('Error loading appointments:', error);
-                UIUtils.showError(appointmentsError, `Error loading appointments: ${error.message}`);
-                appointmentsTableBody.innerHTML = `<tr><td colspan="7">Error loading appointments data</td></tr>`;
+                console.error('Error loading secretaries:', error);
+                totalSecretariesEl.textContent = '0';
             }
-        }
-        */
-
-        // Render patients table (formerly renderClients)
-        function renderPatients(patients) { // Changed from renderClients to renderPatients
-            if (!patients || patients.length === 0) { // Changed from clients to patients
-                emptyState.style.display = 'block';
-                patientsTableBody.innerHTML = ''; // Updated reference
-                
-                // Update pagination info
-                currentPageSpan.textContent = '0';
-                totalPagesSpan.textContent = '0';
-                currentPageStart.textContent = '0';
-                currentPageEnd.textContent = '0';
-                totalPatientsSpan.textContent = '0';
-                prevPageBtn.disabled = true;
-                nextPageBtn.disabled = true;
-                
-                return;
-            }
-            
-            emptyState.style.display = 'none';
-            
-            // Calculate pagination
-            const totalPages = Math.ceil(patients.length / rowsPerPage);
-            const startIndex = (currentPage - 1) * rowsPerPage;
-            const endIndex = Math.min(startIndex + rowsPerPage, patients.length);
-            const paginatedPatients = patients.slice(startIndex, endIndex);
-            
-            // Render paginated patients
-            patientsTableBody.innerHTML = paginatedPatients.map(patient => `
-                <tr>
-                    <td style="display: none;">${patient.id || patient._id || 'N/A'}</td>
-                    <td>${patient.name || patient.firstName + ' ' + patient.lastName || 'N/A'}</td>
-                    <td>${patient.email || 'N/A'}</td>
-                    <td>${patient.role || 'patient'}</td>
-                    <td><span class="status-badge status-${patient.status || 'active'}">${patient.status || 'active'}</span></td>
-                    <td>${formatDate(patient.createdAt || patient.created_at || new Date())}</td>
-                    <td>
-                        <button class="action-btn edit-btn" data-patient='${JSON.stringify(patient).replace(/'/g, "\\'")}'>
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
-                        <button class="action-btn delete-btn" data-patient-id="${patient.id || patient._id || 'N/A'}" data-patient-name="${patient.name || patient.firstName + ' ' + patient.lastName || 'N/A'}">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-            
-            // Update pagination info
-            currentPageSpan.textContent = currentPage;
-            totalPagesSpan.textContent = totalPages;
-            currentPageStart.textContent = startIndex + 1;
-            currentPageEnd.textContent = endIndex;
-            totalPatientsSpan.textContent = patients.length;
-            
-            // Update pagination button states
-            prevPageBtn.disabled = currentPage === 1;
-            nextPageBtn.disabled = currentPage === totalPages;
-        }
-
-        // Render doctors table
-        function renderDoctors(doctors) {
-            if (!doctors || doctors.length === 0) {
-                doctorsTableBody.innerHTML = `
-                    <tr>
-                        <td colspan="5">
-                            <div class="empty-state">
-                                <i class="fas fa-user-md"></i>
-                                <h3>No Doctors Found</h3>
-                                <p>There are no doctors in the system yet.</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            doctorsTableBody.innerHTML = doctors.map(doctor => `
-                <tr>
-                    <td style="display: none;">${doctor.id || doctor._id || 'N/A'}</td>
-                    <td>${doctor.name || doctor.firstName + ' ' + doctor.lastName || 'N/A'}</td>
-                    <td>${doctor.email || 'N/A'}</td>
-                    <td>${doctor.specialty || doctor.specialisation || 'General Practitioner'}</td>
-                    <td><span class="status-badge status-${doctor.status || 'active'}">${doctor.status || 'active'}</span></td>
-                    <td>${formatDate(doctor.createdAt || doctor.created_at || new Date())}</td>
-                </tr>
-            `).join('');
-        }
-
-        // Render appointments table - Removed as we're hiding the appointments section
-        /*
-        function renderAppointments(appointments) {
-            if (!appointments || appointments.length === 0) {
-                appointmentsTableBody.innerHTML = `
-                    <tr>
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <i class="fas fa-calendar-check"></i>
-                                <h3>No Appointments Found</h3>
-                                <p>There are no appointments in the system yet.</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            appointmentsTableBody.innerHTML = appointments.map(appointment => `
-                <tr>
-                    <td>${appointment.id || appointment._id || 'N/A'}</td>
-                    <td>${appointment.user?.name || appointment.user?.firstName + ' ' + appointment.user?.lastName || appointment.user || appointment.patient_id || 'N/A'}</td>
-                    <td>${appointment.doctor?.name || appointment.doctor?.firstName + ' ' + appointment.doctor?.lastName || appointment.doctor || appointment.doctor_id || 'N/A'}</td>
-                    <td>${formatDate(appointment.date || new Date())}</td>
-                    <td>${appointment.start_time || appointment.startTime || 'N/A'} - ${appointment.end_time || appointment.endTime || 'N/A'}</td>
-                    <td><span class="status-badge status-${appointment.status || 'pending'}">${appointment.status || 'pending'}</span></td>
-                    <td>${appointment.consultation_type || appointment.consultationType || appointment.appointment_type || 'N/A'}</td>
-                </tr>
-            `).join('');
-        }
-        */
-
-        // Update patient statistics (formerly updateClientStats)
-        function updatePatientStats(patients) { // Changed from updateClientStats to updatePatientStats
-            if (!patients) { // Changed from clients to patients
-                totalPatientsEl.textContent = '0'; // Updated reference
-                activePatientsEl.textContent = '0'; // Updated reference
-                pendingPatientsEl.textContent = '0'; // Updated reference
-                return;
-            }
-            
-            totalPatientsEl.textContent = patients.length; // Updated reference
-            
-            const activePatients = patients.filter(patient => (patient.status || 'active') === 'active').length; // Changed from clients to patients
-            activePatientsEl.textContent = activePatients; // Updated reference
-            
-            const pendingPatients = patients.filter(patient => (patient.status || 'active') === 'pending').length; // Changed from clients to patients
-            pendingPatientsEl.textContent = pendingPatients; // Updated reference
-        }
-
-        // Update doctor statistics
-        function updateDoctorStats(doctors) {
-            totalDoctorsEl.textContent = doctors ? doctors.length : '0';
         }
 
         // Update last refreshed time
@@ -1216,81 +1018,119 @@
             lastRefreshedEl.textContent = `Last refreshed: ${now.toLocaleTimeString()}`;
         }
 
-        // Add patient button functionality
-        document.getElementById('add-patient-btn').addEventListener('click', function() {
-            alert('In a full implementation, this would open a form to add a new patient.');
-        });
-        
-        // Logout functionality
-        document.getElementById('logout-link').addEventListener('click', function(e) {
-            e.preventDefault();
-            if (confirm('Are you sure you want to logout?')) {
-                // Perform logout action
-                window.location.href = 'login.html';
-            }
-        });
-        
-        // Test API connection and data
-        async function testAPIConnection() {
+        // Patient pagination variables
+        let currentPatientPage = 1;
+        const patientsPerPage = 5;
+
+        // Load patients list with pagination
+        async function loadPatientsList() {
             try {
-                console.log('Testing API connection...');
-                console.log('Access token:', apiService.getToken() ? 'Present' : 'Missing');
-                console.log('API base URL:', apiService.baseURL);
+                // Show loading state
+                document.getElementById('patients-table').style.display = 'table';
+                document.getElementById('empty-state').style.display = 'none';
+                document.getElementById('patients-error').style.display = 'none';
 
-                // Test authentication
-                if (!apiService.isAuthenticated()) {
-                    console.error('User not authenticated');
-                    return;
-                }
-
-                console.log('✅ User is authenticated, testing API endpoints...');
-
-                // Test users endpoint
-                try {
-                    const response = await fetch('/v1/users', {
-                        headers: {
-                            'Authorization': 'Bearer ' + apiService.getToken(),
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log('✅ Users endpoint accessible');
-                        console.log('Users data structure:', Object.keys(data));
-                    } else {
-                        console.error('❌ Users endpoint error:', response.status, response.statusText);
+                const token = AuthUtils.getToken();
+                const url = `/v1/patients?page=${currentPatientPage}&limit=${patientsPerPage}`;
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
                     }
-                } catch (error) {
-                    console.error('❌ Error testing users endpoint:', error.message);
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
+                const data = await response.json();
+                const patients = data.patients;
+                const pagination = data.pagination;
 
-                // Test doctors endpoint
-                try {
-                    const response = await fetch('/v1/doctors', {
-                        headers: {
-                            'Authorization': 'Bearer ' + apiService.getToken(),
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log('✅ Doctors endpoint accessible');
-                        console.log('Doctors data structure:', Object.keys(data));
-                    } else {
-                        console.error('❌ Doctors endpoint error:', response.status, response.statusText);
-                    }
-                } catch (error) {
-                    console.error('❌ Error testing doctors endpoint:', error.message);
+                if (patients && patients.length > 0) {
+                    renderPatients(patients);
+                    updatePatientPagination(pagination);
+                } else {
+                    document.getElementById('patients-table').style.display = 'none';
+                    document.getElementById('empty-state').style.display = 'block';
+                    updatePatientPagination({ page: 1, totalPages: 1, totalResults: 0 });
                 }
-
             } catch (error) {
-                console.error('Error testing API connection:', error);
-                console.error('Stack trace:', error.stack);
+                console.error('Error loading patients list:', error);
+                document.getElementById('patients-table').style.display = 'none';
+                document.getElementById('patients-error').style.display = 'block';
+                document.getElementById('patients-error').textContent = 'Error loading patients: ' + error.message;
+                updatePatientPagination({ page: 1, totalPages: 1, totalResults: 0 });
             }
         }
 
+        // Render patients in the table
+        function renderPatients(patients) {
+            const tableBody = document.getElementById('patients-table-body');
+            tableBody.innerHTML = '';
+
+            patients.forEach(patient => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="display: none;">${patient.id}</td>
+                    <td>${patient.name}</td>
+                    <td>${patient.email}</td>
+                    <td>${patient.role}</td>
+                    <td>${patient.status}</td>
+                    <td>${new Date(patient.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="viewPatient('${patient.id}')">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Update patient pagination controls
+        function updatePatientPagination(pagination) {
+            const { page, totalPages, totalResults } = pagination;
+            
+            // Update pagination info text
+            const start = totalResults > 0 ? (page - 1) * patientsPerPage + 1 : 0;
+            const end = Math.min(page * patientsPerPage, totalResults);
+            
+            document.getElementById('current-page-start').textContent = start;
+            document.getElementById('current-page-end').textContent = end;
+            document.getElementById('total-patients').textContent = totalResults;
+            
+            // Update page numbers
+            document.getElementById('current-page').textContent = page;
+            document.getElementById('total-pages').textContent = totalPages;
+            
+            // Update button states
+            document.getElementById('prev-page-btn').disabled = page <= 1;
+            document.getElementById('next-page-btn').disabled = page >= totalPages;
+        }
+
+        // View patient details
+        function viewPatient(patientId) {
+            console.log('Viewing patient:', patientId);
+            // Implement view patient functionality
+        }
+
+        // Initialize patient pagination event listeners
+        document.getElementById('prev-page-btn').addEventListener('click', () => {
+            if (currentPatientPage > 1) {
+                currentPatientPage--;
+                loadPatientsList();
+            }
+        });
+
+        document.getElementById('next-page-btn').addEventListener('click', () => {
+            currentPatientPage++;
+            loadPatientsList();
+        });
+
+        // Load initial patient list
+        loadPatientsList();
     </script>
 </body>
 </html>

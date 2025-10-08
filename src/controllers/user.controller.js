@@ -51,6 +51,13 @@ const getDoctors = catchAsync(async (req, res) => {
   res.send(result);
 });
 
+const getPatients = catchAsync(async (req, res) => {
+  const filter = pick(req.query, []);
+  const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  const result = await userService.queryPatients(filter, options);
+  res.send(result);
+});
+
 const getClients = catchAsync(async (req, res) => {
   const filter = pick(req.query, ['role']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
@@ -448,6 +455,7 @@ module.exports = {
   updateCurrentUser,
   uploadProfilePicture,
   getDoctors,
+  getPatients,
   getClients,
   getDoctorsWithFilters,
   getDoctorById,

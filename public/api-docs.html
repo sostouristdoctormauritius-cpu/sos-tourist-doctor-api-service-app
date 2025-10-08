@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - SOS Tourist Doctor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #006400;
+            --secondary-color: #009147;
+            --accent-color: #006400;
+            --light-color: #f4f7fc;
+            --dark-color: #333;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #009147;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .api-section {
+            background: white;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .section-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .endpoint {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .endpoint:last-child {
+            border-bottom: none;
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .method {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .method.get {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .method.post {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .method.put {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .method.delete {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .endpoint-url {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .description {
+            margin-bottom: 15px;
+            color: #666;
+        }
+
+        .code-example {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .nav-links a {
+            color: var(--primary-color);
+            text-decoration: none;
+            padding: 10px 15px;
+            border: 1px solid var(--primary-color);
+            border-radius: 5px;
+            margin: 0 5px;
+            transition: all 0.3s;
+        }
+
+        .nav-links a:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .auth-badge {
+            background-color: #ffc107;
+            color: #000;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .no-auth-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-code"></i> SOS Tourist Doctor API Documentation</h1>
+        <p>Complete reference for all available API endpoints</p>
+    </div>
+
+    <div class="container">
+        <div class="nav-links">
+            <a href="/v1/dashboard"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+            <a href="#public-endpoints">Public Endpoints</a>
+            <a href="#protected-endpoints">Protected Endpoints</a>
+        </div>
+
+        <!-- Public Endpoints Section -->
+        <div class="api-section" id="public-endpoints">
+            <div class="section-header">
+                <i class="fas fa-unlock"></i> Public Endpoints (No Authentication Required)
+            </div>
+
+            <!-- Health Check -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/health</span>
+                    <span class="no-auth-badge">No Auth</span>
+                </div>
+                <div class="description">
+                    Health check endpoint to verify if the API server is running.
+                </div>
+                <div class="code-example">
+curl -X GET http://localhost:3000/v1/health</div>
+                <strong>Response:</strong>
+                <div class="code-example">{
+  "status": "OK",
+  "timestamp": "2025-01-01T00:00:00.000Z",
+  "uptime": "0 seconds"
+}</div>
+            </div>
+
+            <!-- Authentication Endpoints -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/v1/auth/admin/login</span>
+                    <span class="no-auth-badge">No Auth</span>
+                </div>
+                <div class="description">
+                    Admin user login endpoint. Returns JWT access and refresh tokens.
+                </div>
+                <div class="code-example">
+curl -X POST http://localhost:3000/v1/auth/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"password"}'</div>
+                <strong>Response:</strong>
+                <div class="code-example">{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": "user-id",
+    "email": "admin@example.com",
+    "role": "admin"
+  }
+}</div>
+            </div>
+
+            <!-- Public User Data -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/users/public</span>
+                    <span class="no-auth-badge">No Auth</span>
+                </div>
+                <div class="description">
+                    Get publicly available user information (filtered data).
+                </div>
+                <div class="code-example">
+curl -X GET http://localhost:3000/v1/users/public</div>
+            </div>
+
+            <!-- Public Data -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/public/*</span>
+                    <span class="no-auth-badge">No Auth</span>
+                </div>
+                <div class="description">
+                    Access to public data and resources.
+                </div>
+            </div>
+
+            <!-- Doctors (Public Access) -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/doctors</span>
+                    <span class="no-auth-badge">No Auth</span>
+                </div>
+                <div class="description">
+                    Get list of available doctors (public information).
+                </div>
+                <div class="code-example">
+curl -X GET http://localhost:3000/v1/doctors</div>
+            </div>
+        </div>
+
+        <!-- Protected Endpoints Section -->
+        <div class="api-section" id="protected-endpoints">
+            <div class="section-header">
+                <i class="fas fa-lock"></i> Protected Endpoints (Authentication Required)
+            </div>
+            <p style="padding: 15px; background-color: #fff3cd; border-bottom: 1px solid #eee; color: #856404;">
+                <strong>Note:</strong> All endpoints below require JWT authentication. Include the access token in the Authorization header: <code>Authorization: Bearer YOUR_ACCESS_TOKEN</code>
+            </p>
+
+            <!-- Dashboard API -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/dashboard/api</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Get dashboard statistics and data for admin users.
+                </div>
+                <div class="code-example">
+curl -X GET http://localhost:3000/v1/dashboard/api \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"</div>
+            </div>
+
+            <!-- Users Management -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/users</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Get all users with optional filtering by role.
+                </div>
+                <div class="code-example">
+curl -X GET "http://localhost:3000/v1/users?role=patient" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"</div>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/v1/users</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Create a new user account.
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/users/{id}</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Get specific user details by ID.
+                </div>
+                <div class="code-example">
+curl -X GET http://localhost:3000/v1/users/USER_ID \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"</div>
+            </div>
+
+            <!-- Appointments -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/appointments</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Get all appointments with optional filtering.
+                </div>
+                <div class="code-example">
+curl -X GET "http://localhost:3000/v1/appointments?status=scheduled&date=2025-01-01" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"</div>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/v1/appointments</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Create a new appointment.
+                </div>
+            </div>
+
+            <!-- Doctor Availability -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/availability</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Get doctor availability schedules.
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/v1/availability</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Set or update doctor availability.
+                </div>
+            </div>
+
+            <!-- Invoices -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/invoices</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Get invoices with optional filtering.
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/notifications</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Get user notifications.
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/v1/notifications</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Send a notification.
+                </div>
+            </div>
+
+            <!-- Chat -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/chat/messages</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Get chat messages between users.
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/v1/chat/messages</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Send a chat message.
+                </div>
+            </div>
+
+            <!-- Video Calls -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-url">/v1/video/call</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Initiate a video call session.
+                </div>
+            </div>
+
+            <!-- Analytics -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/analytics/*</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Access various analytics data and reports.
+                </div>
+            </div>
+
+            <!-- Master Services -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/master-services</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Get master services configuration.
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-url">/v1/settings</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Get application settings.
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-url">/v1/settings</span>
+                    <span class="auth-badge">Auth Required</span>
+                </div>
+                <div class="description">
+                    Update application settings.
+                </div>
+            </div>
+        </div>
+
+        <!-- Authentication Guide -->
+        <div class="api-section">
+            <div class="section-header">
+                <i class="fas fa-key"></i> Authentication Guide
+            </div>
+            <div style="padding: 20px;">
+                <h3>Getting Access Token</h3>
+                <p>1. Use the login endpoint to get your access token:</p>
+                <div class="code-example">
+POST /v1/auth/admin/login
+Content-Type: application/json
+
+{
+  "email": "your-email@example.com",
+  "password": "your-password"
+}</div>
+
+                <p>2. Include the token in all protected API requests:</p>
+                <div class="code-example">
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE</div>
+
+                <h3>Token Expiration</h3>
+                <p>Access tokens expire after a certain period. Use the refresh token to get a new access token when needed.</p>
+            </div>
+        </div>
+
+        <!-- Response Codes -->
+        <div class="api-section">
+            <div class="section-header">
+                <i class="fas fa-info-circle"></i> Common Response Codes
+            </div>
+            <div style="padding: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <div style="padding: 10px; background-color: #d4edda; border-radius: 5px;">
+                        <strong>200</strong> - Success
+                    </div>
+                    <div style="padding: 10px; background-color: #f8d7da; border-radius: 5px;">
+                        <strong>400</strong> - Bad Request
+                    </div>
+                    <div style="padding: 10px; background-color: #f8d7da; border-radius: 5px;">
+                        <strong>401</strong> - Unauthorized
+                    </div>
+                    <div style="padding: 10px; background-color: #f8d7da; border-radius: 5px;">
+                        <strong>404</strong> - Not Found
+                    </div>
+                    <div style="padding: 10px; background-color: #f8d7da; border-radius: 5px;">
+                        <strong>500</strong> - Internal Server Error
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2025 SOS Tourist Doctor API. All rights reserved.</p>
+        <p>For technical support, please contact the development team.</p>
+    </div>
+</body>
+</html>

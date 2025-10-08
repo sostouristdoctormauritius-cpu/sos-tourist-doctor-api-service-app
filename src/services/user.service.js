@@ -109,6 +109,23 @@ const queryDoctors = async (filter, options) => {
 };
 
 /**
+ * Query for patients with enhanced filtering
+ * @param {Object} filter - Filter object
+ * @param {Object} options - Query options
+ * @returns {Promise<QueryResult>}
+ */
+const queryPatients = async (filter, options) => {
+  const patientFilter = {
+    role: 'patient',
+    is_archived: { neq: true },
+    ...filter
+  };
+
+  const patients = await dbManager.paginate('users', patientFilter, options);
+  return patients;
+};
+
+/**
  * Get user by id
  * @param {ObjectId} id
  * @returns {Promise<User>}
@@ -565,5 +582,6 @@ module.exports = {
   requestDeletion,
   completeDeletion,
   deleteOtpsByUserId,
-  createOtp
+  createOtp,
+  queryPatients
 };

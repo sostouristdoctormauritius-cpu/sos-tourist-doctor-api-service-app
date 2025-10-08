@@ -9,12 +9,16 @@ const dbManager = require('../db/dbManager');
 const getDoctors = catchAsync(async (req, res) => {
   const filter = pick(req.query, ['name', 'specialization']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  
+  // Set default pagination values
+  if (!options.limit) options.limit = 10;
+  if (!options.page) options.page = 1;
 
   // Ensure we only get doctors
   filter.role = 'doctor';
 
-  // Only get listed doctors
-  filter['doctor_profile->>is_listed'] = true;
+  // Only get non-archived doctors
+  filter.is_archived = false;
 
   const result = await userService.queryUsers(filter, options);
   res.send(result);

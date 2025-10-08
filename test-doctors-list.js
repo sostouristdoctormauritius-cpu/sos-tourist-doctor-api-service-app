@@ -1,42 +1,41 @@
 const fetch = require('node-fetch').default;
 
-async function testDoctorsList() {
+async function testDoctorsListAPI() {
   try {
-    console.log('Testing doctors list API...');
+    console.log('Testing doctors list API...\n');
     
-    // Try to get stored tokens
+    // Check if we already have an access token in localStorage-like variable
     let accessToken = null;
     
-    // In a real browser environment, we would check localStorage
-    // For this Node.js script, we'll need to login each time
-    
-    console.log('Logging in as admin...');
-    
-    // Login as admin to get access token
-    const loginResponse = await fetch('http://localhost:3000/v1/auth/admin/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Test-Script'
-      },
-      body: JSON.stringify({
-        email: 'admin@example.com',
-        password: 'Admin123!'
-      })
-    });
-    
-    const loginData = await loginResponse.json();
-    
-    if (!loginResponse.ok) {
-      console.error('Admin login failed:', loginData.message);
-      return;
+    // If no token, login as admin
+    if (!accessToken) {
+      console.log('Logging in as admin...');
+      
+      const loginResponse = await fetch('http://localhost:3000/v1/auth/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Test-Script'
+        },
+        body: JSON.stringify({
+          email: 'admin@example.com',
+          password: 'Admin123!'
+        })
+      });
+      
+      const loginData = await loginResponse.json();
+      
+      if (!loginResponse.ok) {
+        console.error('❌ Admin login failed:', loginData.message);
+        return;
+      }
+      
+      accessToken = loginData.access_token;
+      console.log('✅ Admin login successful. Access token obtained.\n');
     }
     
-    accessToken = loginData.access_token;
-    console.log('✅ Admin login successful. Access token obtained.');
-    
     // Test the doctors list API
-    console.log('\n--- Testing Doctors List API ---');
+    console.log('Fetching doctors list...');
     const doctorsResponse = await fetch('http://localhost:3000/v1/doctors', {
       method: 'GET',
       headers: {
@@ -52,22 +51,27 @@ async function testDoctorsList() {
     if (doctorsResponse.ok) {
       console.log('✅ Doctors list API is working!');
       console.log(`Total doctors found: ${doctorsData.results.length}`);
-      console.log(`Page: ${doctorsData.page}`);
-      console.log(`Limit: ${doctorsData.limit}`);
-      console.log(`Total results: ${doctorsData.totalResults}`);
+      console.log(`Page: ${doctorsData.page} of ${doctorsData.totalPages}`);
+      console.log(`Total records: ${doctorsData.totalResults}`);
       
       if (doctorsData.results.length > 0) {
-        console.log('\nFirst few doctors:');
+        console.log('\nFirst 3 doctors:');
         doctorsData.results.slice(0, 3).forEach((doctor, index) => {
-          console.log(`${index + 1}. ${doctor.name} (${doctor.email}) - ${doctor.specialization || 'No specialization'}`);
+          console.log(`  ${index + 1}. ${doctor.name} (${doctor.email}) - ${doctor.role}`);
         });
+        
+        if (doctorsData.results.length > 3) {
+          console.log(`  ... and ${doctorsData.results.length - 3} more`);
+        }
+      } else {
+        console.log('No doctors found in the database.');
       }
     } else {
       console.log('❌ Doctors list API failed!');
       console.log('Error:', doctorsData.message || doctorsData);
     }
     
-    // Test the public doctors endpoint as well
+    // Also test the public doctors endpoint
     console.log('\n--- Testing Public Doctors Endpoint ---');
     const publicDoctorsResponse = await fetch('http://localhost:3000/v1/doctors/public/all', {
       method: 'GET',
@@ -83,15 +87,20 @@ async function testDoctorsList() {
     if (publicDoctorsResponse.ok) {
       console.log('✅ Public doctors list API is working!');
       console.log(`Total public doctors found: ${publicDoctorsData.results.length}`);
-      console.log(`Page: ${publicDoctorsData.page}`);
-      console.log(`Limit: ${publicDoctorsData.limit}`);
-      console.log(`Total results: ${publicDoctorsData.totalResults}`);
+      console.log(`Page: ${publicDoctorsData.page} of ${publicDoctorsData.totalPages}`);
+      console.log(`Total records: ${publicDoctorsData.totalResults}`);
       
       if (publicDoctorsData.results.length > 0) {
-        console.log('\nFirst few public doctors:');
+        console.log('\nFirst 3 public doctors:');
         publicDoctorsData.results.slice(0, 3).forEach((doctor, index) => {
-          console.log(`${index + 1}. ${doctor.name} (${doctor.email}) - ${doctor.specialization || 'No specialization'}`);
+          console.log(`  ${index + 1}. ${doctor.name} (${doctor.email}) - ${doctor.role}`);
         });
+        
+        if (publicDoctorsData.results.length > 3) {
+          console.log(`  ... and ${publicDoctorsData.results.length - 3} more`);
+        }
+      } else {
+        console.log('No public doctors found in the database.');
       }
     } else {
       console.log('❌ Public doctors list API failed!');
@@ -99,9 +108,9 @@ async function testDoctorsList() {
     }
     
   } catch (error) {
-    console.error('Error during doctors list test:', error.message);
+    console.error('Error during doctors list API test:', error.message);
     console.error('Stack trace:', error.stack);
   }
 }
 
-testDoctorsList();
+testDoctorsListAPI();

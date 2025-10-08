@@ -162,6 +162,31 @@ class DbManager {
     }
   }
 
+  async paginate(table, filter, options) {
+    const startTime = Date.now();
+    let errorOccurred = false;
+
+    try {
+      this._checkClient();
+      logger.info('dbManager.paginate called with:', { table, filter, options });
+      const result = await this.supabaseAdapter.paginate(table, filter, options);
+      logger.info('dbManager.paginate completed successfully');
+      return result;
+    } catch (error) {
+      logger.error('Error in dbManager.paginate:', error);
+      logger.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      errorOccurred = true;
+      throw error;
+    } finally {
+      const duration = Date.now() - startTime;
+      metricsService.trackDatabaseQuery(duration, errorOccurred);
+    }
+  }
+
   getDbClient() {
     return this.supabaseAdapter;
   }

@@ -75,6 +75,7 @@ router
   .route('/doctors')
   .get(validate(userValidation.getUsers), userController.getDoctors);
 
+
 // Changed from /admin to / to make endpoints directly under /users
 router
   .route('/')

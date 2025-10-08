@@ -2,6 +2,8 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const httpStatus = require('http-status');
+const passport = require('passport');
+const { jwtStrategy } = require('./config/passport');
 
 // Load config with error handling
 let config;
@@ -17,6 +19,10 @@ try {
 }
 
 const app = express();
+
+// Initialize passport
+app.use(passport.initialize());
+passport.use('jwt', jwtStrategy);
 
 // Middleware - Moved before routes to ensure body parsing works
 app.use(express.json({ limit: '10mb' }));
@@ -37,12 +43,14 @@ try {
   const authRoute = require('./routes/v1/auth.route');
   const userPublicRoute = require('./routes/v1/user.public.route');
   const publicDataRoute = require('./routes/v1/publicData.route');
+  const dashboardRoute = require('./routes/v1/dashboard.route');
 
   // Public API routes
   app.use('/v1/health', healthRoute);
   app.use('/v1/auth', authRoute);
   app.use('/v1/users/public', userPublicRoute);
   app.use('/v1/public', publicDataRoute);
+  app.use('/v1/dashboard', dashboardRoute);
 
   console.log('✅ API routes loaded successfully');
 } catch (error) {
@@ -83,41 +91,30 @@ const loadRoute = (routePath) => {
   }
 };
 
-// Protected API routes
-const sosRoute = loadRoute('./routes/v1/sos.route');
-const userRoute = loadRoute('./routes/v1/user.route');
+// Load doctor public routes without authentication
 const doctorRoute = loadRoute('./routes/v1/doctor.route');
-const appointmentRoute = loadRoute('./routes/v1/appointment.route');
-const availabilityRoute = loadRoute('./routes/v1/availability.route');
-const invoiceRoute = loadRoute('./routes/v1/invoice.route');
-const notificationRoute = loadRoute('./routes/v1/notification.route');
-const chatRoute = loadRoute('./routes/v1/chat.route');
-const videoRoute = loadRoute('./routes/v1/video.route');
-const analyticsRoute = loadRoute('./routes/v1/analytics.route');
-const masterServicesRoute = loadRoute('./routes/v1/masterServices.route');
-const settingsRoute = loadRoute('./routes/v1/settings.route');
+app.use('/v1/doctors', doctorRoute);
 
-// Apply auth middleware to protected routes
-app.use('/v1/sos', auth, sosRoute);
-app.use('/v1/users', auth, userRoute);
-app.use('/v1/doctors', auth, doctorRoute);
-app.use('/v1/appointments', auth, appointmentRoute);
-app.use('/v1/availability', auth, availabilityRoute);
-app.use('/v1/invoices', auth, invoiceRoute);
-app.use('/v1/notifications', auth, notificationRoute);
-app.use('/v1/chat', auth, chatRoute);
-app.use('/v1/video', auth, videoRoute);
-app.use('/v1/analytics', auth, analyticsRoute);
-app.use('/v1/master-services', auth, masterServicesRoute);
-app.use('/v1/settings', auth, settingsRoute);
+// Apply auth middleware to other protected routes
+app.use('/v1/sos', auth, loadRoute('./routes/v1/sos.route'));
+app.use('/v1/users', auth, loadRoute('./routes/v1/user.route'));
+app.use('/v1/appointments', auth, loadRoute('./routes/v1/appointment.route'));
+app.use('/v1/availability', auth, loadRoute('./routes/v1/availability.route'));
+app.use('/v1/invoices', auth, loadRoute('./routes/v1/invoice.route'));
+app.use('/v1/notifications', auth, loadRoute('./routes/v1/notification.route'));
+app.use('/v1/chat', auth, loadRoute('./routes/v1/chat.route'));
+app.use('/v1/video', auth, loadRoute('./routes/v1/video.route'));
+app.use('/v1/analytics', auth, loadRoute('./routes/v1/analytics.route'));
+app.use('/v1/master-services', auth, loadRoute('./routes/v1/masterServices.route'));
+app.use('/v1/settings', auth, loadRoute('./routes/v1/settings.route'));
 
 // Serve dashboard page at /dashboard
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/dashboard.html'));
 });
 
-// Serve project overview page at /v1/dashboard
-app.get('/v1/dashboard', (req, res) => {
+// Serve dashboard at /v1/dashboard.html for compatibility
+app.get('/v1/dashboard.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/dashboard.html'));
 });
 
@@ -134,6 +131,19 @@ app.get('/env-config.js', (req, res) => {
   console.log('Serving env-config.js with SUPABASE_URL:', config.SUPABASE_URL ? 'Present' : 'Missing');
   res.send(`window.ENV = ${JSON.stringify(config)};`);
 });
+
+// Serve logout.js file
+app.get('/v1/logout.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'logout.js'));
+});
+
+// Serve auth.js file
+app.get('/auth.js', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', 'auth.js'));
+});
+
+// Serve doctor management script
+app.use('/v1/doctorManagement.js', express.static(path.join(__dirname, 'public', 'doctorManagement.js')));
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -153,10 +163,17 @@ app.use((err, req, res, next) => {
     });
   }
   
-  if (err.name === 'UnauthorizedError') {
+  if (err.name === 'UnauthorizedError' || (err.statusCode && err.statusCode === 401)) {
     return res.status(401).json({
       code: httpStatus.UNAUTHORIZED,
-      message: 'Unauthorized'
+      message: err.message || 'Unauthorized'
+    });
+  }
+  
+  if (err.statusCode) {
+    return res.status(err.statusCode).json({
+      code: err.statusCode,
+      message: err.message || httpStatus[err.statusCode]
     });
   }
   

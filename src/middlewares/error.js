@@ -47,17 +47,17 @@ const errorHandler = (err, req, res, next) => {
 
   // Ensure statusCode is always defined and valid
   if (!statusCode || typeof statusCode !== 'number' || statusCode < 100 || statusCode > 599) {
-    statusCode = status.INTERNAL_SERVER_ERROR;
+    statusCode = httpStatus.INTERNAL_SERVER_ERROR;
   }
 
   // Get message from error object or fallback to the HTTP status message
-  let message = err.message || status[statusCode];
+  let message = err.message || httpStatus[statusCode];
 
   // If HTTP status message is missing, use generic error message
   const finalMessage = message || 'Internal Server Error';
 
   if (config.env === 'production' && !err.isOperational) {
-    statusCode = status.INTERNAL_SERVER_ERROR || 500;
+    statusCode = httpStatus.INTERNAL_SERVER_ERROR || 500;
     message = 'Internal Server Error';
   }
 

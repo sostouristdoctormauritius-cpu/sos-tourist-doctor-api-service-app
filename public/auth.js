@@ -1,4 +1,3 @@
-
 window.AuthUtils = {
   getToken: function() {
     try {
@@ -13,8 +12,29 @@ window.AuthUtils = {
     return this.getToken() !== null;
   },
 
+  isTokenExpired: function(token) {
+    if (!token) return true;
+    
+    try {
+      // Decode the JWT token to check expiration
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      // Check if token is expired (with a small buffer)
+      return payload.exp < currentTime + 30; // 30 seconds buffer
+    } catch (e) {
+      // If we can't decode the token, consider it expired
+      return true;
+    }
+  },
+
+  isSessionValid: function() {
+    const token = this.getToken();
+    return token && !this.isTokenExpired(token);
+  },
+
   redirectToLogin: function() {
-    window.location.href = '/v1/login';
+    window.location.href = '/login';
   },
 
   logout: function() {
@@ -40,9 +60,14 @@ window.AuthUtils = {
 
 // Check authentication on page load
 document.addEventListener('DOMContentLoaded', function() {
-  if (!window.AuthUtils.isAuthenticated() &&
-      !window.location.pathname.endsWith('/login') &&
+  // Only check authentication for pages under /v1/ but not for login page
+  if (!window.location.pathname.endsWith('/login') &&
       window.location.pathname.startsWith('/v1/')) {
-    window.AuthUtils.redirectToLogin();
+    
+    // Check if user is authenticated and session is valid
+    if (!window.AuthUtils.isAuthenticated() || 
+        !window.AuthUtils.isSessionValid()) {
+      window.AuthUtils.logout();
+    }
   }
 });

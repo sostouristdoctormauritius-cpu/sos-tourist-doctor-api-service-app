@@ -1,7 +1,9 @@
+const adminService = require('./admin.service');
 const appConfigService = require('./appConfig.service');
 const appointmentService = require('./appointment.service');
 const authService = require('./auth.service');
 const availabilityService = require('./availability.service');
+const patientService = require('./patient.service');
 
 const dbHealthCheckService = require('./dbHealthCheck.service');
 const doctorNoteService = require('./doctorNote.service');
@@ -22,6 +24,7 @@ const userService = require('./user.service');
 const tokenService = require('./token.service');
 
 module.exports = {
+  adminService,
   appConfigService,
   appointmentService,
   authService,
@@ -31,6 +34,7 @@ module.exports = {
   emailService,
   invoiceService,
   otpService,
+  patientService,
   paymentService,
   prescriptionService,
   realtimeService,

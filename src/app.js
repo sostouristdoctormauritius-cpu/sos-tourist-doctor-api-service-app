@@ -121,6 +121,24 @@ app.get('/v1/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/dashboard.html'));
 });
 
+// Serve secure environment configuration for client-side
+app.get('/env-config.js', (req, res) => {
+  // Only serve in development or when explicitly requested
+  if (process.env.NODE_ENV === 'production' && !req.headers['x-admin-request']) {
+    return res.status(404).send('Not found');
+  }
+
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
+  const config = {
+    SUPABASE_URL: process.env.SUPABASE_URL || 'http://localhost:54321',
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || ''
+  };
+
+  res.send(`window.ENV = ${JSON.stringify(config)};`);
+});
+
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Global error handler:', err);

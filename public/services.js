@@ -5,9 +5,15 @@ class ApiService {
     this.baseURL = '/v1';
     // Initialize Supabase client if in browser environment
     if (typeof window !== 'undefined' && typeof supabase !== 'undefined') {
-      this.SUPABASE_URL = 'http://localhost:54321';
-      this.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
-      this.supabase = supabase.createClient(this.SUPABASE_URL, this.SUPABASE_SERVICE_KEY);
+      // Get Supabase configuration from environment or secure location
+      this.SUPABASE_URL = window.ENV?.SUPABASE_URL || 'http://localhost:54321';
+      this.SUPABASE_ANON_KEY = window.ENV?.SUPABASE_ANON_KEY || '';
+
+      if (this.SUPABASE_URL && this.SUPABASE_ANON_KEY) {
+        this.supabase = supabase.createClient(this.SUPABASE_URL, this.SUPABASE_ANON_KEY);
+      } else {
+        console.warn('Supabase configuration not found. Please check your environment variables.');
+      }
     }
   }
 

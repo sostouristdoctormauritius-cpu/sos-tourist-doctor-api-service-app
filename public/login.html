@@ -176,18 +176,20 @@
     </div>
 
     <script>
-        // Login functionality with specific credentials
+        // Login functionality
         document.querySelector('.login-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
-            // Try admin login with database validation
+            // Perform admin login
             loginAdmin(email, password);
         });
 
         async function loginAdmin(email, password) {
+            const errorMessage = document.getElementById('error-message');
+            
             try {
                 const response = await fetch('/v1/auth/admin/login', {
                     method: 'POST',
@@ -205,26 +207,14 @@
                     localStorage.setItem('refreshToken', data.refresh_token);
                     
                     // Redirect to dashboard
-                    window.location.href = '/dashboard';
+                    window.location.href = '/v1/dashboard';
                 } else {
                     // Show error message
-                    const errorMessage = document.getElementById('error-message');
                     errorMessage.textContent = data.message || 'Invalid credentials. Please try again.';
                     errorMessage.style.display = 'block';
                 }
             } catch (error) {
-                // Show generic error message - never expose credentials
-                const errorMessage = document.getElementById('error-message');
-                errorMessage.textContent = 'Login failed. Please check your credentials and try again.';
+                errorMessage.textContent = 'Network error. Please try again.';
                 errorMessage.style.display = 'block';
-
-                // Clear the form
-                document.getElementById('email').value = '';
-                document.getElementById('password').value = '';
-
-                console.error('Login error:', error);
             }
         }
-    </script>
-</body>
-</html>

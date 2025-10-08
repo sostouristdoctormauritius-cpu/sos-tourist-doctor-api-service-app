@@ -1,8 +1,8 @@
 const { createClient } = require('@supabase/supabase-js');
 
 // Supabase configuration from the .env file
-const supabaseUrl = 'https://rsbcbiyvkjqsdtlqwibk.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzYmNiaXl2a2pxc2R0bHF3aWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2ODUyNjYsImV4cCI6MjA3NTI2MTI2Nn0.Vgm6BSDwuvUeztfti9CZO-zJt6RVq__3gn8j8KtTlTE';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 // Create Supabase client with anon key for authentication
 const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -60,8 +60,8 @@ async function testAdminAuthentication() {
 
 async function testServiceRoleAccess() {
   console.log('\nTesting with service role key for comparison...');
-  
-  const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzYmNiaXl2a2pxc2R0bHF3aWJrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTY4NTI2NiwiZXhwIjoyMDc1MjYxMjY2fQ.uXwokqlWkfj--W64476PTG4OJCpE_sQjlbiArsSOvUo';
+
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
   // Create Supabase client with service role key
   const supabaseService = createClient(supabaseUrl, supabaseServiceKey, {

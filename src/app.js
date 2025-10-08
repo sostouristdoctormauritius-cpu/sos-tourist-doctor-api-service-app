@@ -123,11 +123,6 @@ app.get('/v1/dashboard', (req, res) => {
 
 // Serve secure environment configuration for client-side
 app.get('/env-config.js', (req, res) => {
-  // Only serve in development or when explicitly requested
-  if (process.env.NODE_ENV === 'production' && !req.headers['x-admin-request']) {
-    return res.status(404).send('Not found');
-  }
-
   res.setHeader('Content-Type', 'application/javascript');
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
@@ -136,6 +131,7 @@ app.get('/env-config.js', (req, res) => {
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || ''
   };
 
+  console.log('Serving env-config.js with SUPABASE_URL:', config.SUPABASE_URL ? 'Present' : 'Missing');
   res.send(`window.ENV = ${JSON.stringify(config)};`);
 });
 

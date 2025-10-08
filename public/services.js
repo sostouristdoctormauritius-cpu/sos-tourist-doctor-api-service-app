@@ -11,8 +11,11 @@ class ApiService {
 
       if (this.SUPABASE_URL && this.SUPABASE_ANON_KEY) {
         this.supabase = supabase.createClient(this.SUPABASE_URL, this.SUPABASE_ANON_KEY);
+        console.log('Supabase client initialized successfully');
       } else {
         console.warn('Supabase configuration not found. Please check your environment variables.');
+        console.log('SUPABASE_URL:', this.SUPABASE_URL);
+        console.log('SUPABASE_ANON_KEY:', this.SUPABASE_ANON_KEY ? 'Present' : 'Missing');
       }
     }
   }
@@ -87,35 +90,16 @@ class ApiService {
     return response;
   }
 
-  // Fetch clients data from Supabase
+  // Fetch clients data from REST API (since RLS blocks anon access)
   async getClients() {
     try {
-      console.log('Fetching clients from Supabase...');
+      console.log('Fetching clients from REST API...');
 
-      // First check if Supabase client is initialized
-      if (!this.supabase) {
-        throw new Error('Supabase client not initialized');
-      }
+      const response = await this.fetch(`${this.baseURL}/users`);
+      const data = await response.json();
 
-      const { data, error } = await this.supabase
-        .from('users')
-        .select('*')
-        .or('role.eq.user,role.eq.patient');
-
-      if (error) {
-        console.error('Supabase query error:', error);
-        throw new Error(`Supabase error: ${error.message}`);
-      }
-
-      console.log('Clients data fetched:', data);
-
-      // Ensure we return data in the expected format
-      if (!data || !Array.isArray(data)) {
-        return [];
-      }
-
-      // Transform data to ensure it has the expected properties
-      const clients = data.map(user => ({
+      // Transform data to match expected format
+      const clients = (data.results || data.users || data).map(user => ({
         id: user.id || user._id || 'N/A',
         name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'N/A',
         email: user.email || 'N/A',
@@ -124,97 +108,112 @@ class ApiService {
         created_at: user.created_at || user.createdAt || new Date().toISOString()
       }));
 
-      console.log('Transformed clients data:', clients);
+      console.log('Clients data fetched from REST API:', clients);
       return clients;
     } catch (error) {
-      console.error('Error fetching clients from Supabase:', error);
+      console.error('Error fetching clients from REST API:', error);
       throw error;
     }
   }
 
-  // Fetch doctors data from Supabase
+  // Fetch clients data from REST API
+  async getClientsFromAPI() {
+    try {
+      console.log('Fetching clients from REST API...');
+      
+      const response = await this.fetch(`${this.baseURL}/users`);
+      const data = await response.json();
+      
+      // Transform data to match expected format
+      const clients = (data.results || data.users || data).map(user => ({
+        id: user.id || user._id || 'N/A',
+        name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'N/A',
+        email: user.email || 'N/A',
+        role: user.role || 'patient',
+        status: user.is_status || user.status || 'active',
+        created_at: user.created_at || user.createdAt || new Date().toISOString()
+      }));
+      
+      console.log('Clients data fetched from REST API:', clients);
+      return clients;
+    } catch (error) {
+      console.error('Error fetching clients from REST API:', error);
+      throw error;
+    }
+  }
+
+  // Fetch doctors data from REST API (since RLS blocks anon access)
   async getDoctors() {
     try {
-      console.log('Fetching doctors from Supabase...');
+      console.log('Fetching doctors from REST API...');
 
-      // First check if Supabase client is initialized
-      if (!this.supabase) {
-        throw new Error('Supabase client not initialized');
-      }
+      const response = await this.fetch(`${this.baseURL}/doctors`);
+      const data = await response.json();
 
-      // First, get all users with role 'doctor'
-      const { data: users, error: usersError } = await this.supabase
-        .from('users')
-        .select('*')
-        .eq('role', 'doctor')
-        .order('created_at', { ascending: false });
+      // Transform data to match expected format
+      const doctors = (data.results || data.doctors || data).map(doctor => ({
+        id: doctor.id || doctor._id || 'N/A',
+        name: doctor.name || `${doctor.firstName || ''} ${doctor.lastName || ''}`.trim() || 'N/A',
+        email: doctor.email || 'No Email',
+        role: doctor.role || 'doctor',
+        specialty: doctor.specialisation || doctor.specialty || 'General Practitioner',
+        status: doctor.is_status || doctor.status || 'active',
+        created_at: doctor.created_at || doctor.createdAt || new Date().toISOString(),
+        updated_at: doctor.updated_at || doctor.updatedAt || new Date().toISOString(),
+        rating: parseFloat(doctor.rating) || 0,
+        rating_count: parseInt(doctor.rating_count) || 0,
+        address: doctor.address || 'Not specified',
+        working_hours: doctor.working_hours || 'Not specified',
+        bio: doctor.bio || 'No biography available',
+        experience: doctor.experience || 'Not specified',
+        education: doctor.education || 'Not specified',
+        languages: doctor.languages || ['English'],
+        avatar: doctor.avatar || null,
+        phone: doctor.phone || 'Not specified'
+      }));
 
-      // Error handling for users query
-      if (usersError) {
-        console.error('Supabase users query error:', usersError);
-        throw new Error(`Failed to fetch doctors: ${usersError.message}`);
-      }
-
-      // Return empty array if no users found
-      if (!users || users.length === 0) {
-        console.warn('No doctors found in users table');
-        return [];
-      }
-
-      // Get user IDs for fetching profiles
-      const userIds = users.map(user => user.id);
-
-      // Then, get doctor profiles for these users
-      const { data: profiles, error: profilesError } = await this.supabase
-        .from('doctor_profiles')
-        .select('*')
-        .in('user_id', userIds);
-
-      // Handle profile query error (not fatal, profiles might not exist)
-      if (profilesError) {
-        console.warn('Supabase profiles query error (continuing without profiles):', profilesError);
-      }
-
-      // Create a map of profiles by user_id for easy lookup
-      const profileMap = {};
-      if (profiles && Array.isArray(profiles)) {
-        profiles.forEach(profile => {
-          profileMap[profile.user_id] = profile;
-        });
-      }
-
-      // Combine users with their profiles
-      const doctors = users.map(user => {
-        const profile = profileMap[user.id] || {};
-
-        return {
-          id: user.id || user._id || 'N/A',
-          name: user.name ||
-               `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-               'Unnamed Doctor',
-          email: user.email || 'No Email',
-          role: user.role || 'doctor',
-          specialty: profile.specialisation || user.specialty || 'General Practitioner',
-          status: user.is_status || user.status || 'active',
-          created_at: user.created_at || user.createdAt || new Date().toISOString(),
-          updated_at: user.updated_at || user.updatedAt || new Date().toISOString(),
-          rating: parseFloat(profile.rating) || parseFloat(user.rating) || 0,
-          rating_count: parseInt(profile.rating_count) || parseInt(user.rating_count) || 0,
-          address: profile.address || 'Not specified',
-          working_hours: profile.working_hours || 'Not specified',
-          bio: profile.bio || 'No biography available',
-          experience: profile.experience || 'Not specified',
-          education: profile.education || 'Not specified',
-          languages: profile.languages || ['English'],
-          avatar: user.avatar || null,
-          phone: user.phone || 'Not specified'
-        };
-      });
-
-      console.log('Transformed doctors data:', doctors);
+      console.log('Doctors data fetched from REST API:', doctors);
       return doctors;
     } catch (error) {
-      console.error('Error fetching doctors from Supabase:', error);
+      console.error('Error fetching doctors from REST API:', error);
+      throw error;
+    }
+  }
+
+  // Fetch doctors data from REST API
+  async getDoctorsFromAPI() {
+    try {
+      console.log('Fetching doctors from REST API...');
+      
+      const response = await this.fetch(`${this.baseURL}/doctors`);
+      const data = await response.json();
+      
+      // Transform data to match expected format
+      const doctors = (data.results || data.doctors || data).map(doctor => ({
+        id: doctor.id || doctor._id || 'N/A',
+        name: doctor.name || `${doctor.firstName || ''} ${doctor.lastName || ''}`.trim() || 'N/A',
+        email: doctor.email || 'No Email',
+        role: doctor.role || 'doctor',
+        specialty: doctor.specialisation || doctor.specialty || 'General Practitioner',
+        status: doctor.is_status || doctor.status || 'active',
+        created_at: doctor.created_at || doctor.createdAt || new Date().toISOString(),
+        updated_at: doctor.updated_at || doctor.updatedAt || new Date().toISOString(),
+        rating: parseFloat(doctor.rating) || 0,
+        rating_count: parseInt(doctor.rating_count) || 0,
+        address: doctor.address || 'Not specified',
+        working_hours: doctor.working_hours || 'Not specified',
+        bio: doctor.bio || 'No biography available',
+        experience: doctor.experience || 'Not specified',
+        education: doctor.education || 'Not specified',
+        languages: doctor.languages || ['English'],
+        avatar: doctor.avatar || null,
+        phone: doctor.phone || 'Not specified'
+      }));
+      
+      console.log('Doctors data fetched from REST API:', doctors);
+      return doctors;
+    } catch (error) {
+      console.error('Error fetching doctors from REST API:', error);
       throw error;
     }
   }

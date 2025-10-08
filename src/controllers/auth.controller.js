@@ -238,12 +238,24 @@ const loginAdmin = catchAsync(async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const { user, tokens } = await authenticateUser(email, password, 'admin');
+    // First authenticate the user
+    const { user, tokens } = await authenticateUser(email, password);
+    
+    // Then check if the user has admin role
+    if (user.role !== 'admin') {
+      logger.warn('Unauthorized access attempt', { userId: user.id, role: user.role });
+      throw new ApiError(status.FORBIDDEN, 'You are not authorized to access this resource');
+    }
+    
     logger.info('Admin login successful', { userId: user.id, role: user.role });
     
+    // Add the access_token and refresh_token to the response for consistency with frontend
     res.status(status.OK).send({
       user,
       tokens,
+      access_token: tokens.access.token,
+      refresh_token: tokens.refresh.token,
+      expires_in: tokens.access.expires,
       message: 'Admin login successful'
     });
   } catch (error) {

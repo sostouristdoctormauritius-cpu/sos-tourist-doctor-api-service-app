@@ -18,6 +18,10 @@ try {
 
 const app = express();
 
+// Middleware - Moved before routes to ensure body parsing works
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 // Routes - Place before static file serving to ensure redirect works
 app.get('/', (req, res) => {
   res.redirect('/login');
@@ -47,8 +51,6 @@ try {
 }
 
 // Middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser(config.jwt.secret));
 
 // Static file serving
@@ -108,6 +110,16 @@ app.use('/v1/video', auth, videoRoute);
 app.use('/v1/analytics', auth, analyticsRoute);
 app.use('/v1/master-services', auth, masterServicesRoute);
 app.use('/v1/settings', auth, settingsRoute);
+
+// Serve dashboard page at /dashboard
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+});
+
+// Serve project overview page at /v1/dashboard
+app.get('/v1/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+});
 
 // Global error handler
 app.use((err, req, res, next) => {

@@ -25,7 +25,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "docker:build": "docker build -t sos-tourist-doctor-api .",
-    "docker:run": "docker run -d --name sos-tourist-doctor-api --env-file .env -p 3000:3000 sos-tourist-doctor-api"
+    "docker:run": "docker run -d --name sos-tourist-doctor-api --env-file .env -p 3000:3000 sos-tourist-doctor-api",
+    "preprod": "node scripts/deployment/prepare-for-production.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",

@@ -255,11 +255,21 @@ Supabase Auth is used for user authentication with proper session management.
 ### Running the Application
 
 Start the development server:
-bash:
+```bash
 npm run dev
+```
 
 For production:
+```bash
 npm start
+```
+
+### Dashboard Access
+
+After successful login, users are redirected to the dashboard:
+- **Dashboard URL**: `http://localhost:3000/dashboard`
+- **Admin Dashboard**: `http://localhost:3000/v1/dashboard`
+- **Features**: Patient management, doctor listings, appointment tracking, and real-time statistics
 
 
 ## Running in Production

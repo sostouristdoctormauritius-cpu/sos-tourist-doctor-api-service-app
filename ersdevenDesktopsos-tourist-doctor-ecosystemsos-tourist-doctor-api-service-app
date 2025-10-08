@@ -1,0 +1,28 @@
+[1mdiff --git a/public/login.html b/public/login.html[m
+[1mindex a1039fe..3ee3231 100644[m
+[1m--- a/public/login.html[m
+[1m+++ b/public/login.html[m
+[36m@@ -486,6 +486,23 @@[m
+                                 </div>[m
+                             </div>[m
+ [m
+[32m+[m[32m                            <div class="section">[m
+[32m+[m[32m                                <h2>🧪 <span class="highlight">API Testing Tools</span></h2>[m
+[32m+[m[32m                                <div class="feature-grid">[m
+[32m+[m[32m                                    <div class="feature-card">[m
+[32m+[m[32m                                        <h3>🔐 Authentication Tester</h3>[m
+[32m+[m[32m                                        <p>Test login, registration, and token management endpoints</p>[m
+[32m+[m[32m                                        <p><a href="/auth-test.html" target="_blank">Open Auth Tester</a></p>[m
+[32m+[m[32m                                    </div>[m
+[32m+[m
+[32m+[m[32m                                    <div class="feature-card">[m
+[32m+[m[32m                                        <h3>🔧 General API Tester</h3>[m
+[32m+[m[32m                                        <p>Test any API endpoint with custom requests and headers</p>[m
+[32m+[m[32m                                        <p><a href="/api-test.html" target="_blank">Open API Tester</a></p>[m
+[32m+[m[32m                                    </div>[m
+[32m+[m[32m                                </div>[m
+[32m+[m[32m                            </div>[m
+[32m+[m
+                             <div class="section">[m
+                                 <h2>🎯 <span class="highlight">Current Status</span></h2>[m
+                                 <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; border-left: 4px solid #2196f3;">[m

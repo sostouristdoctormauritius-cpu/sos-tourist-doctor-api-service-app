@@ -129,6 +129,15 @@
             color: #666;
             font-size: 14px;
         }
+        
+        .error-message {
+            color: #ED1C24;
+            background-color: #ffe6e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -167,352 +176,49 @@
         // Login functionality with specific credentials
         document.querySelector('.login-form').addEventListener('submit', function(e) {
             e.preventDefault();
-
+            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-
-            // Check for specific admin credentials
-            if (email === 'admin@sostouristdoctor.com' && password === 'Adminsostouristdoctor123!') {
-                // Show project information screen
-                showProjectInfo();
-            } else {
-                alert('Invalid credentials. Please use: admin@sostouristdoctor.com / Adminsostouristdoctor123!');
-            }
+            
+            // Try admin login with database validation
+            loginAdmin(email, password);
         });
 
-        function showProjectInfo() {
-            const projectInfoHTML = `
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>SOS Tourist Doctor - Project Information</title>
-                    <style>
-                        * {
-                            margin: 0;
-                            padding: 0;
-                            box-sizing: border-box;
-                        }
-
-                        body {
-                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            min-height: 100vh;
-                            padding: 20px;
-                        }
-
-                        .container {
-                            max-width: 1200px;
-                            margin: 0 auto;
-                            background: white;
-                            border-radius: 20px;
-                            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-                            overflow: hidden;
-                        }
-
-                        .header {
-                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            color: white;
-                            padding: 40px;
-                            text-align: center;
-                        }
-
-                        .logo {
-                            font-size: 48px;
-                            margin-bottom: 20px;
-                        }
-
-                        .title {
-                            font-size: 32px;
-                            font-weight: bold;
-                            margin-bottom: 10px;
-                        }
-
-                        .subtitle {
-                            font-size: 18px;
-                            opacity: 0.9;
-                        }
-
-                        .content {
-                            padding: 40px;
-                        }
-
-                        .section {
-                            margin-bottom: 40px;
-                            border-left: 4px solid #667eea;
-                            padding-left: 20px;
-                        }
-
-                        .section h2 {
-                            color: #333;
-                            font-size: 24px;
-                            margin-bottom: 15px;
-                        }
-
-                        .section p {
-                            color: #666;
-                            line-height: 1.6;
-                            margin-bottom: 10px;
-                        }
-
-                        .feature-grid {
-                            display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                            gap: 30px;
-                            margin-top: 20px;
-                        }
-
-                        .feature-card {
-                            background: #f8f9fa;
-                            padding: 25px;
-                            border-radius: 15px;
-                            border-left: 4px solid #667eea;
-                        }
-
-                        .feature-card h3 {
-                            color: #333;
-                            font-size: 20px;
-                            margin-bottom: 10px;
-                        }
-
-                        .feature-card p {
-                            color: #666;
-                            line-height: 1.5;
-                        }
-
-                        .tech-stack {
-                            background: #f8f9fa;
-                            padding: 25px;
-                            border-radius: 15px;
-                            margin-top: 20px;
-                        }
-
-                        .tech-stack h3 {
-                            color: #333;
-                            font-size: 20px;
-                            margin-bottom: 15px;
-                        }
-
-                        .tech-grid {
-                            display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                            gap: 15px;
-                        }
-
-                        .tech-item {
-                            background: white;
-                            padding: 15px;
-                            border-radius: 10px;
-                            text-align: center;
-                            border: 2px solid #e1e5e9;
-                        }
-
-                        .tech-item strong {
-                            color: #667eea;
-                        }
-
-                        .back-btn {
-                            position: fixed;
-                            top: 20px;
-                            right: 20px;
-                            background: #667eea;
-                            color: white;
-                            border: none;
-                            padding: 15px 25px;
-                            border-radius: 25px;
-                            font-size: 16px;
-                            cursor: pointer;
-                            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-                            transition: all 0.3s ease;
-                        }
-
-                        .back-btn:hover {
-                            transform: translateY(-2px);
-                            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-                        }
-
-                        .status {
-                            background: #e8f5e8;
-                            border: 1px solid #4caf50;
-                            color: #2e7d32;
-                            padding: 15px;
-                            border-radius: 10px;
-                            margin-bottom: 20px;
-                        }
-
-                        .highlight {
-                            background: linear-gradient(135deg, #667eea, #764ba2);
-                            -webkit-background-clip: text;
-                            -webkit-text-fill-color: transparent;
-                            font-weight: bold;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <button class="back-btn" onclick="window.history.back()">← Back to Login</button>
-
-                    <div class="container">
-                        <div class="header">
-                            <div class="logo">🏥</div>
-                            <h1 class="title">SOS Tourist Doctor</h1>
-                            <p class="subtitle">Comprehensive Healthcare Management System</p>
-                        </div>
-
-                        <div class="content">
-                            <div class="status">
-                                <strong>✅ System Status:</strong> API Server running on port 3000 | Database: Supabase Online | Ready for Development
-                            </div>
-
-                            <div class="section">
-                                <h2>📋 <span class="highlight">Project Overview</span></h2>
-                                <p>The SOS Tourist Doctor API is a comprehensive healthcare management system designed to connect tourists with medical professionals. This platform provides seamless healthcare access for travelers, ensuring they receive quality medical care wherever they are.</p>
-
-                                <p><strong>Current Version:</strong> v1.0.0 | <strong>Environment:</strong> Development | <strong>Database:</strong> Supabase PostgreSQL</p>
-                            </div>
-
-                            <div class="section">
-                                <h2>🚀 <span class="highlight">Key Features</span></h2>
-                                <div class="feature-grid">
-                                    <div class="feature-card">
-                                        <h3>👨‍⚕️ Doctor Management</h3>
-                                        <p>Complete doctor profiles with specializations, ratings, availability, and multilingual support for international patients.</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <h3>📅 Appointment System</h3>
-                                        <p>Advanced booking system with real-time availability, consultation types (video, chat, in-person), and automated scheduling.</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <h3>💊 Medical Records</h3>
-                                        <p>Secure patient records, prescription management, medical history tracking, and doctor notes integration.</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <h3>💳 Payment Integration</h3>
-                                        <p>Integrated payment processing with multiple currencies, invoice management, and secure transaction handling.</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <h3>🔒 Security & Auth</h3>
-                                        <p>Role-based access control (User, Doctor, Admin), JWT authentication, and comprehensive audit logging.</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <h3>📱 Real-time Communication</h3>
-                                        <p>Socket.IO integration for live updates, appointment notifications, and instant messaging between patients and doctors.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="section">
-                                <h2>🛠 <span class="highlight">Technology Stack</span></h2>
-                                <div class="tech-stack">
-                                    <div class="tech-grid">
-                                        <div class="tech-item">
-                                            <strong>Runtime</strong><br>Node.js
-                                        </div>
-                                        <div class="tech-item">
-                                            <strong>Framework</strong><br>Express.js
-                                        </div>
-                                        <div class="tech-item">
-                                            <strong>Database</strong><br>Supabase PostgreSQL
-                                        </div>
-                                        <div class="tech-item">
-                                            <strong>Authentication</strong><br>JWT + Supabase Auth
-                                        </div>
-                                        <div class="tech-item">
-                                            <strong>Real-time</strong><br>Socket.IO
-                                        </div>
-                                        <div class="tech-item">
-                                            <strong>Validation</strong><br>Joi Schema
-                                        </div>
-                                        <div class="tech-item">
-                                            <strong>Documentation</strong><br>Swagger/OpenAPI
-                                        </div>
-                                        <div class="tech-item">
-                                            <strong>Deployment</strong><br>Docker Ready
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="section">
-                                <h2>🔗 <span class="highlight">API Endpoints</span></h2>
-                                <p><strong>Base URL:</strong> http://localhost:3000/v1</p>
-
-                                <h3>Available Resources:</h3>
-                                <div class="feature-grid" style="margin-top: 15px;">
-                                    <div class="feature-card">
-                                        <h3>👤 Users & Authentication</h3>
-                                        <p>POST /auth/login<br>POST /auth/register<br>GET /users<br>PATCH /users/:id</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <h3>👨‍⚕️ Doctors</h3>
-                                        <p>GET /doctors<br>GET /doctors/admin/all<br>POST /doctors<br>PATCH /doctors/:id</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <h3>📅 Appointments</h3>
-                                        <p>GET /appointments<br>POST /appointments<br>PATCH /appointments/:id<br>DELETE /appointments/:id</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <h3>⏰ Availability</h3>
-                                        <p>GET /availability/doctor/:id<br>POST /availability<br>PUT /availability/:id</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="section">
-                                <h2>📚 <span class="highlight">Available Scripts</span></h2>
-                                <div class="feature-grid">
-                                    <div class="feature-card">
-                                        <h3>🏥 List All Doctors</h3>
-                                        <p><code>node scripts/list_all_doctors.js</code><br>Lists all doctors in the database with detailed information.</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <h3>📊 Database Check</h3>
-                                        <p><code>node scripts/database/check-db.js</code><br>Checks database connectivity and shows sample data.</p>
-                                    </div>
-
-                                    <div class="feature-card">
-                                        <h3>🔧 Supabase Direct Query</h3>
-                                        <p><code>node scripts/list_doctors_supabase.js</code><br>Direct Supabase queries for doctor data.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="section">
-                                <h2>🎯 <span class="highlight">Current Status</span></h2>
-                                <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; border-left: 4px solid #2196f3;">
-                                    <p><strong>✅ Server Status:</strong> Running on http://localhost:3000</p>
-                                    <p><strong>✅ Database:</strong> Supabase Online - Ready for Data</p>
-                                    <p><strong>✅ Seed Script:</strong> Fixed and Ready to Load Sample Data</p>
-                                    <p><strong>⚠️ Next Step:</strong> Run the seed script in Supabase SQL Editor to load doctor data</p>
-                                </div>
-                            </div>
-
-                            <div class="section">
-                                <h2>🚀 <span class="highlight">Quick Start Guide</span></h2>
-                                <ol style="color: #666; line-height: 1.8;">
-                                    <li><strong>Load Sample Data:</strong> Copy <code>supabase/seed_unified.sql</code> to Supabase SQL Editor and run it</li>
-                                    <li><strong>Test API:</strong> Use <code>curl -X GET http://localhost:3000/v1/doctors</code> to list doctors</li>
-                                    <li><strong>Admin Access:</strong> Use the admin endpoints with proper JWT authentication</li>
-                                    <li><strong>View Logs:</strong> Check the terminal for server logs and API responses</li>
-                                </ol>
-                            </div>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            `;
-
-            // Replace current page content
-            document.body.innerHTML = projectInfoHTML;
+        async function loginAdmin(email, password) {
+            try {
+                const response = await fetch('/v1/auth/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store tokens
+                    localStorage.setItem('accessToken', data.access_token);
+                    localStorage.setItem('refreshToken', data.refresh_token);
+                    
+                    // Redirect to dashboard
+                    window.location.href = '/dashboard';
+                } else {
+                    // Show error message
+                    errorMessage.textContent = data.message || 'Invalid credentials. Please try again.';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                // Fallback to hardcoded credentials if API is not available
+                if (email === 'admin@test.com' && password === 'Admin123!') {
+                    // Mock tokens for testing
+                    localStorage.setItem('accessToken', 'mock_access_token');
+                    localStorage.setItem('refreshToken', 'mock_refresh_token');
+                    window.location.href = '/v1/dashboard';
+                } else {
+                    alert('Invalid credentials. Please use: admin@sostouristdoctor.com / Adminsostouristdoctor123!');
+                }
+            }
         }
     </script>
 </body>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication API Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .token-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e2e3e5;
+            border-radius: 4px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Authentication API Tester</h1>
+        
+        <div class="section">
+            <h2>Patient Login</h2>
+            <div class="form-group">
+                <label for="loginEmail">Email:</label>
+                <input type="email" id="loginEmail" value="patient@test.com">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" value="Patient123!">
+            </div>
+            <button onclick="loginUser()">Login as Patient</button>
+        </div>
+
+        <div class="section">
+            <h2>Doctor Login</h2>
+            <div class="form-group">
+                <label for="doctorLoginEmail">Email:</label>
+                <input type="email" id="doctorLoginEmail" value="doctor@test.com">
+            </div>
+            <div class="form-group">
+                <label for="doctorLoginPassword">Password:</label>
+                <input type="password" id="doctorLoginPassword" value="Doctor123!">
+            </div>
+            <button onclick="loginDoctor()">Login as Doctor</button>
+        </div>
+
+        <div class="section">
+            <h2>Admin Login</h2>
+            <div class="form-group">
+                <label for="adminLoginEmail">Email:</label>
+                <input type="email" id="adminLoginEmail" value="admin@test.com">
+            </div>
+            <div class="form-group">
+                <label for="adminLoginPassword">Password:</label>
+                <input type="password" id="adminLoginPassword" value="Admin123!">
+            </div>
+            <button onclick="loginAdmin()">Login as Admin</button>
+        </div>
+
+        <div class="section">
+            <h2>User Registration</h2>
+            <div class="form-group">
+                <label for="regEmail">Email:</label>
+                <input type="email" id="regEmail" value="newuser@test.com">
+            </div>
+            <div class="form-group">
+                <label for="regPassword">Password:</label>
+                <input type="password" id="regPassword" value="User123!">
+            </div>
+            <div class="form-group">
+                <label for="regName">Name:</label>
+                <input type="text" id="regName" value="New User">
+            </div>
+            <div class="form-group">
+                <label for="regPhone">Phone:</label>
+                <input type="text" id="regPhone" value="1234567890">
+            </div>
+            <div class="form-group">
+                <label for="regCountryCode">Country Code:</label>
+                <input type="text" id="regCountryCode" value="+1">
+            </div>
+            <button onclick="registerUser()">Register User</button>
+        </div>
+
+        <div class="section">
+            <h2>Token Management</h2>
+            <button onclick="refreshTokens()" class="btn-secondary">Refresh Tokens</button>
+            <button onclick="clearTokens()" class="btn-danger">Clear Tokens</button>
+            <div class="token-info">
+                <strong>Access Token:</strong> <span id="accessToken">Not set</span><br>
+                <strong>Refresh Token:</strong> <span id="refreshToken">Not set</span>
+            </div>
+        </div>
+
+        <div class="response" id="responseArea" style="display:none;"></div>
+    </div>
+
+    <script>
+        // Load tokens from localStorage on page load
+        window.onload = function() {
+            updateTokenDisplay();
+        };
+
+        function updateTokenDisplay() {
+            const accessToken = localStorage.getItem('accessToken');
+            const refreshToken = localStorage.getItem('refreshToken');
+            
+            document.getElementById('accessToken').textContent = accessToken ? 'Set' : 'Not set';
+            document.getElementById('refreshToken').textContent = refreshToken ? 'Set' : 'Not set';
+        }
+
+        async function loginUser() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const response = await fetch('/v1/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store tokens
+                    localStorage.setItem('accessToken', data.access_token);
+                    localStorage.setItem('refreshToken', data.refresh_token);
+                    updateTokenDisplay();
+                    
+                    showResponse(data, 'success');
+                } else {
+                    showResponse(data, 'error');
+                }
+            } catch (error) {
+                showResponse({ message: 'Network error', error: error.message }, 'error');
+            }
+        }
+
+        async function loginDoctor() {
+            const email = document.getElementById('doctorLoginEmail').value;
+            const password = document.getElementById('doctorLoginPassword').value;
+            
+            try {
+                const response = await fetch('/v1/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store tokens
+                    localStorage.setItem('accessToken', data.access_token);
+                    localStorage.setItem('refreshToken', data.refresh_token);
+                    updateTokenDisplay();
+                    
+                    showResponse(data, 'success');
+                } else {
+                    showResponse(data, 'error');
+                }
+            } catch (error) {
+                showResponse({ message: 'Network error', error: error.message }, 'error');
+            }
+        }
+
+        async function loginAdmin() {
+            const email = document.getElementById('adminLoginEmail').value;
+            const password = document.getElementById('adminLoginPassword').value;
+            
+            try {
+                const response = await fetch('/v1/auth/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store tokens
+                    localStorage.setItem('accessToken', data.access_token);
+                    localStorage.setItem('refreshToken', data.refresh_token);
+                    updateTokenDisplay();
+                    
+                    showResponse(data, 'success');
+                } else {
+                    showResponse(data, 'error');
+                }
+            } catch (error) {
+                showResponse({ message: 'Network error', error: error.message }, 'error');
+            }
+        }
+
+        async function registerUser() {
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const name = document.getElementById('regName').value;
+            const phone = document.getElementById('regPhone').value;
+            const countryCode = document.getElementById('regCountryCode').value;
+            
+            try {
+                const response = await fetch('/v1/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        email, 
+                        password, 
+                        name,
+                        phone,
+                        country_code: countryCode
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResponse(data, 'success');
+                } else {
+                    showResponse(data, 'error');
+                }
+            } catch (error) {
+                showResponse({ message: 'Network error', error: error.message }, 'error');
+            }
+        }
+
+        async function refreshTokens() {
+            const refreshToken = localStorage.getItem('refreshToken');
+            
+            if (!refreshToken) {
+                showResponse({ message: 'No refresh token found' }, 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/v1/auth/refresh-tokens', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ refreshToken })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Update tokens
+                    localStorage.setItem('accessToken', data.access_token);
+                    localStorage.setItem('refreshToken', data.refresh_token);
+                    updateTokenDisplay();
+                    
+                    showResponse(data, 'success');
+                } else {
+                    showResponse(data, 'error');
+                }
+            } catch (error) {
+                showResponse({ message: 'Network error', error: error.message }, 'error');
+            }
+        }
+
+        function clearTokens() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            updateTokenDisplay();
+            showResponse({ message: 'Tokens cleared successfully' }, 'success');
+        }
+
+        function showResponse(data, type) {
+            const responseArea = document.getElementById('responseArea');
+            responseArea.style.display = 'block';
+            responseArea.className = 'response ' + type;
+            responseArea.textContent = JSON.stringify(data, null, 2);
+            
+            // Scroll to response
+            responseArea.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

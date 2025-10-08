@@ -5,7 +5,7 @@ class ApiService {
     this.baseURL = '/v1';
     // Initialize Supabase client if in browser environment
     if (typeof window !== 'undefined' && typeof supabase !== 'undefined') {
-      this.SUPABASE_URL = 'http://127.0.0.1:54321';
+      this.SUPABASE_URL = 'http://localhost:54321';
       this.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
       this.supabase = supabase.createClient(this.SUPABASE_URL, this.SUPABASE_SERVICE_KEY);
     }
@@ -85,12 +85,19 @@ class ApiService {
   async getClients() {
     try {
       console.log('Fetching clients from Supabase...');
+
+      // First check if Supabase client is initialized
+      if (!this.supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+
       const { data, error } = await this.supabase
         .from('users')
         .select('*')
         .or('role.eq.user,role.eq.patient');
 
       if (error) {
+        console.error('Supabase query error:', error);
         throw new Error(`Supabase error: ${error.message}`);
       }
 
@@ -123,6 +130,11 @@ class ApiService {
   async getDoctors() {
     try {
       console.log('Fetching doctors from Supabase...');
+
+      // First check if Supabase client is initialized
+      if (!this.supabase) {
+        throw new Error('Supabase client not initialized');
+      }
 
       // First, get all users with role 'doctor'
       const { data: users, error: usersError } = await this.supabase

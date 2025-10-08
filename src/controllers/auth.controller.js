@@ -34,7 +34,19 @@ const getSupabaseClient = () => {
 const supabase = getSupabaseClient();
 
 const register = catchAsync(async (req, res) => {
-  const { email, password, name, phone, role } = req.body;
+  // Check if req.body exists and has properties
+  if (!req.body || Object.keys(req.body).length === 0) {
+    throw new ApiError(status.BAD_REQUEST, 'Registration data is required');
+  }
+  
+  const { email, password, name, phone, country_code, role } = req.body;
+  
+  // Validate required fields
+  if (!email || !password || !name || !phone || !country_code) {
+    throw new ApiError(status.BAD_REQUEST, 'Email, password, name, phone, and country code are required');
+  }
+
+  logger.info('Attempting user registration', { email, name, phone, country_code, role });
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -43,18 +55,32 @@ const register = catchAsync(async (req, res) => {
       data: {
         name,
         phone,
+        country_code,
         role: role || 'user'
       }
     }
   });
 
   if (error) {
-    throw new ApiError(status.BAD_REQUEST, error.message);
+    logger.error('Supabase registration error', { 
+      email, 
+      error: error.message, 
+      code: error.code,
+      details: error 
+    });
+    throw new ApiError(status.BAD_REQUEST, `Registration failed: ${error.message}`);
   }
 
   if (!data.user) {
-    throw new ApiError(status.INTERNAL_SERVER_ERROR, 'User registration failed');
+    logger.error('User registration failed - no user data returned', { email });
+    throw new ApiError(status.INTERNAL_SERVER_ERROR, 'User registration failed - no user data returned from authentication service');
   }
+
+  logger.info('Supabase registration successful', { 
+    email, 
+    userId: data.user.id,
+    emailConfirmed: !!data.user.email_confirmed_at
+  });
 
   // Handle file upload
   let profilePicture = null;
@@ -68,14 +94,27 @@ const register = catchAsync(async (req, res) => {
     email: data.user.email,
     name,
     phone,
+    country_code,
     role: data.user.user_metadata.role,
     profile_picture: profilePicture,
     is_email_verified: data.user.email_confirmed_at ? true : false
   };
 
+  logger.info('Creating user in local database', { userPayload });
+
   const user = await userService.createUser(userPayload);
 
-  res.status(status.CREATED).send({ user, session: data.session });
+  logger.info('User registration completed successfully', { 
+    email, 
+    userId: user.id,
+    localDbId: user.id
+  });
+
+  res.status(status.CREATED).send({ 
+    user, 
+    session: data.session,
+    message: 'User registered successfully'
+  });
 });
 
 const authenticateUser = async (email, password, requiredRole = null) => {
@@ -172,6 +211,11 @@ const authenticateUser = async (email, password, requiredRole = null) => {
 };
 
 const login = catchAsync(async (req, res) => {
+  // Check if req.body exists and has properties
+  if (!req.body || Object.keys(req.body).length === 0) {
+    throw new ApiError(status.BAD_REQUEST, 'Email and password are required');
+  }
+  
   const { email, password } = req.body;
   const { user, tokens } = await authenticateUser(email, password);
 
@@ -186,7 +230,11 @@ const login = catchAsync(async (req, res) => {
 });
 
 const loginAdmin = catchAsync(async (req, res) => {
-  logger.info('Login admin request received', { email: req.body.email });
+  // Check if req.body exists and has properties
+  if (!req.body || Object.keys(req.body).length === 0) {
+    throw new ApiError(status.BAD_REQUEST, 'Email and password are required');
+  }
+  
   const { email, password } = req.body;
 
   try {
@@ -210,6 +258,11 @@ const loginAdmin = catchAsync(async (req, res) => {
 
 // Forgot password implementation
 const forgotPassword = catchAsync(async (req, res) => {
+  // Check if req.body exists and has properties
+  if (!req.body || Object.keys(req.body).length === 0) {
+    throw new ApiError(status.BAD_REQUEST, 'Email is required');
+  }
+  
   const { email } = req.body;
 
   if (!email) {
@@ -252,6 +305,11 @@ const forgotPassword = catchAsync(async (req, res) => {
 
 // Change password implementation
 const changePassword = catchAsync(async (req, res) => {
+  // Check if req.body exists and has properties
+  if (!req.body || Object.keys(req.body).length === 0) {
+    throw new ApiError(status.BAD_REQUEST, 'New password is required');
+  }
+  
   // In a real implementation, this would use the token from the reset email
   // For now, we'll implement a simple version that requires authentication
   const { newPassword } = req.body;
@@ -285,7 +343,7 @@ const changePassword = catchAsync(async (req, res) => {
 
 const refreshTokens = catchAsync(async (req, res) => {
   // Extract refresh token from body (for Bearer token approach)
-  const refreshToken = req.body.refreshToken || req.query.refreshToken;
+  const refreshToken = req.body?.refreshToken || req.query?.refreshToken;
 
   if (!refreshToken) {
     throw new ApiError(status.UNAUTHORIZED, 'Refresh token not found');
@@ -316,7 +374,10 @@ const refreshTokens = catchAsync(async (req, res) => {
 });
 
 const logout = catchAsync(async (req, res) => {
-  await authService.logout(req.body.refreshToken);
+  const refreshToken = req.body?.refreshToken;
+  if (refreshToken) {
+    await authService.logout(refreshToken);
+  }
   res.status(status.NO_CONTENT).send();
 });
 
@@ -324,6 +385,11 @@ const logout = catchAsync(async (req, res) => {
  * Send OTP via Supabase Auth
  */
 const sendOtp = catchAsync(async (req, res) => {
+  // Check if req.body exists and has properties
+  if (!req.body || Object.keys(req.body).length === 0) {
+    throw new ApiError(status.BAD_REQUEST, 'Email is required');
+  }
+  
   const { username } = req.body;
 
   if (!username) {
@@ -352,6 +418,11 @@ const sendOtp = catchAsync(async (req, res) => {
  * Verify OTP via Supabase Auth and login
  */
 const verifyOtp = catchAsync(async (req, res) => {
+  // Check if req.body exists and has properties
+  if (!req.body || Object.keys(req.body).length === 0) {
+    throw new ApiError(status.BAD_REQUEST, 'Email and OTP token are required');
+  }
+  
   const { username, token } = req.body;
 
   if (!username || !token) {
@@ -398,6 +469,11 @@ const verifyOtp = catchAsync(async (req, res) => {
 
 // Resend OTP implementation (with the typo to match mobile app)
 const resendOtp = catchAsync(async (req, res) => {
+  // Check if req.body exists and has properties
+  if (!req.body || Object.keys(req.body).length === 0) {
+    throw new ApiError(status.BAD_REQUEST, 'Email is required');
+  }
+  
   const { email } = req.body;
 
   if (!email) {
@@ -425,6 +501,11 @@ const resendOtp = catchAsync(async (req, res) => {
 });
 
 const resetPassword = catchAsync(async (req, res) => {
+  // Check if req.body exists and has properties
+  if (!req.body || Object.keys(req.body).length === 0) {
+    throw new ApiError(status.BAD_REQUEST, 'Token and new password are required');
+  }
+  
   const { token, newPassword } = req.body;
 
   if (!token || !newPassword) {

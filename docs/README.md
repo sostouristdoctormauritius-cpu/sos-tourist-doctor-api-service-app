@@ -1,0 +1,15 @@
+# Project Documentation
+
+This directory contains all project documentation files that were previously in the root directory.
+
+## Available Documentation
+
+- [AVAILABILITY_DATA_DOCUMENTATION.md](../AVAILABILITY_DATA_DOCUMENTATION.md)
+- [AVAILABILITY_TABLE_TROUBLESHOOTING.md](../AVAILABILITY_TABLE_TROUBLESHOOTING.md)
+- [DEPLOYMENT.md](../DEPLOYMENT.md)
+- [FINAL_INVOICE_DISTRIBUTION_INSTRUCTIONS.md](../FINAL_INVOICE_DISTRIBUTION_INSTRUCTIONS.md)
+- [INVOICE_STATUS_DISTRIBUTION.md](../INVOICE_STATUS_DISTRIBUTION.md)
+- [PATIENT_ROLE_SETUP.md](../PATIENT_ROLE_SETUP.md)
+- [PRODUCTION_SETUP.md](../PRODUCTION_SETUP.md)
+- [TESTING_IMPLEMENTATION.md](../TESTING_IMPLEMENTATION.md)
+- [doctor_availability_report.md](../doctor_availability_report.md)
